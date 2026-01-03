@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { projectParcelToReportContext } from "../../../../lib/contracts/parcel-to-report";
+import { createReportSkeleton as createReportFromContext } from "../../../../lib/contracts/report.schema";
+import { makeAuditEvent } from "../../../../lib/contracts/auditEvent.schema";
 
 type CreateRequest = {
   parcel_context: Record<string, any>;
@@ -49,48 +52,11 @@ function emitAuditEvent(e: Record<string, any>) {
   try {
     const g = globalThis as any;
     if (!g.__AUDIT_EVENTS) g.__AUDIT_EVENTS = [];
-    g.__AUDIT_EVENTS.push({ created_at: new Date().toISOString(), ...e });
+    const ev = makeAuditEvent({ type: e.type, actor: e.actor ?? null, report_id: e.report_id ?? null, request_id: e.request_id ?? null, payload: e.payload ?? null });
+    g.__AUDIT_EVENTS.push(ev);
   } catch {
     // ignore
   }
-}
-
-function projectParcelToReportContext(parcel: Record<string, any>, intent: string) {
-  // Minimal projection — real implementation would be domain-specific
-  return {
-    intent,
-    parcel: { ...parcel },
-  };
-}
-
-function createReportFromContext(context: Record<string, any>, report_id?: string, request_id?: string) {
-  const id = report_id ?? (typeof crypto !== "undefined" && "randomUUID" in crypto ? (crypto as any).randomUUID() : `r_${Date.now()}`);
-
-  // Frozen report shape v0.1 — minimal content for tests
-  const sections = [
-    { type: 'overview', blocks: [] },
-    { type: 'restrictions', blocks: [] },
-    { type: 'process', blocks: [] },
-    { type: 'deadlines', blocks: [] },
-    { type: 'risks', blocks: [] },
-    { type: 'sources', blocks: [{ type: 'evidence_list', items: [] }] },
-  ];
-
-  const report = {
-    // compatibility fields
-    id,
-    report_id: id,
-    request_id: request_id ?? null,
-    status: 'created',
-    created_at: new Date().toISOString(),
-    // frozen contract
-    version: 'rpt-0.1',
-    sections,
-    // include context for debugging
-    context,
-  };
-
-  return report;
 }
 
 export async function POST(req: Request) {
@@ -120,10 +86,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const ctx = projectParcelToReportContext(parcel_context, intent);
-    const report = createReportFromContext(ctx, report_id, request_id);
+    const ctx = projectParcelToReportContext(parcel_context, intent as any);
+    const report = createReportFromContext(report_id ?? `r_${Date.now()}`, request_id ?? null, ctx as any);
 
-    emitAuditEvent({ type: "report.created", report_id: report.id, request_id: report.request_id, payload: { intent } });
+    emitAuditEvent({ type: "report.created", report_id: report.report_id ?? report.id, request_id: report.request_id, payload: { intent } });
 
     return NextResponse.json({ ok: true, report }, { status: 200, headers });
   } catch (e) {

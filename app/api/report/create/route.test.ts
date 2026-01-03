@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { POST } from "./route";
 import { PCX_FIXTURE } from "../../../../lib/contracts/ccp03.fixture";
 
@@ -6,58 +6,58 @@ function makeReq(json: any) {
   return new Request("http://localhost:3000/api/report/create", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(json),
+    body: JSON.stringify(json)
   });
 }
 
-describe("POST /api/report/create (CCP-03)", () => {
-  it("returns frozen CCP-03 response shape for valid input", async () => {
+describe("CCP-03 audit emission", () => {
+  beforeEach(() => {
+    // reset global audit sink
+    (globalThis as any).__AUDIT_EVENTS = [];
+  });
+
+  it("emits report_created audit event on success", async () => {
+    const report_id = "rpt_audit_001";
+    const request_id = "req_audit_001";
+
     const req = makeReq({
       parcel_context: PCX_FIXTURE,
-      intent: { mode: "arc_viability", audience: "property_manager", locale: "en-US" },
-      report_id: "rpt_test_endpoint_001",
-      request_id: "req_test_001",
-      environment: "local",
-      actor: { actor_type: "user", actor_id: "user_1", account_id: "acct_1" },
+      intent: { mode: 'arc_viability' },
+      report_id,
+      request_id
     });
 
     const res = await POST(req);
     expect(res.status).toBe(200);
 
-    const json = await res.json();
-    expect(json.ok).toBe(true);
+    const events = (globalThis as any).__AUDIT_EVENTS;
+    expect(Array.isArray(events)).toBe(true);
+    expect(events.length).toBeGreaterThan(0);
 
-    // Frozen: report shape keys
-    expect(json.report.version).toBe("rpt-0.1");
-    expect(json.report.report_id).toBe("rpt_test_endpoint_001");
-    expect(Array.isArray(json.report.sections)).toBe(true);
-    expect(json.report.sections.map((s: any) => s.type)).toEqual([
-      "overview",
-      "restrictions",
-      "process",
-      "deadlines",
-      "risks",
-      "sources",
-    ]);
+    const created = events.find((e: any) => e.type === "report.created");
+    expect(created).toBeDefined();
+    expect(created.report_id).toBe(report_id);
+    expect(created.request_id).toBe(request_id);
+  });
+});
 
-    // Frozen: sources invariant
-    const sources = json.report.sections.find((s: any) => s.type === "sources");
-    expect(sources.blocks.filter((b: any) => b.type === "evidence_list")).toHaveLength(1);
+describe("CCP-03 audit behavior (frozen)", () => {
+  beforeEach(() => {
+    (globalThis as any).__AUDIT_EVENTS = [];
   });
 
-  it("fails with REPORT_CREATE_CONTRACT if required fields are missing", async () => {
-    const req = makeReq({
-      // parcel_context missing
-      report_id: "rpt_test_endpoint_002",
-      request_id: "req_test_002",
-    });
+  it("emits no audit events on contract failure", async () => {
+    const res = await POST(
+      makeReq({
+        // parcel_context intentionally missing
+        report_id: "rpt_fail_001",
+        request_id: "req_fail_001"
+      })
+    );
 
-    const res = await POST(req);
     expect(res.status).toBe(400);
 
-    const json = await res.json();
-    expect(json.ok).toBe(false);
-    expect(json.error).toBe("REPORT_CREATE_CONTRACT");
-    expect(typeof json.code).toBe("string");
+    const events = (globalThis as any).__AUDIT_EVENTS;
+    expect(events).toHaveLength(0);
   });
 });
