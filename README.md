@@ -24,6 +24,14 @@ This is a starter template for building a SaaS application using **Next.js** wit
 - **Payments**: [Stripe](https://stripe.com/)
 - **UI Library**: [shadcn/ui](https://ui.shadcn.com/)
 
+## Documentation
+
+- **[Copilot Context](docs/copilot-context.md)** — Technical reference for contributors and Copilot
+- **[Strategy & Roadmap](docs/strategy.md)** — Architectural decisions and CCP roadmap
+- **[CCP Register](docs/ccp/CCP_REGISTER_CANONICAL.md)** — Capability Check Points (milestones)
+- **[Workspace Doctrine](docs/governance/workspace-doctrine.md)** — Governance model and scope rules
+- **[Repo Strategy](docs/REPO_STRATEGY.md)** — Two-repo model and workflow
+
 ## Getting Started
 
 ```bash
