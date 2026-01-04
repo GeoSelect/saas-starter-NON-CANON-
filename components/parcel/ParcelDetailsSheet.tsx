@@ -19,28 +19,9 @@ export type ParcelResult = {
   notes: string;
   lat?: number | null;
   lng?: number | null;
-};
-
-type ParcelDetailsSheetProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  parcel: ParcelResult | null;
 }
 
-export { ParcelDetailsSheet };
-
-function ParcelDetailsSheet({
-  open,
-  onOpenChange,
-  parcel,
-  onCreateReport,
-  onCreateSnapshot,
-  onGatedAction,
-  variant = "desktop"
-}: ParcelDetailsSheetProps) {
-  const isMobile = variant === "mobile";
-  const sheetHeight = isMobile ? "h-[80vh]" : "h-[70vh] sm:h-[70vh]";
-  const scrollHeight = isMobile ? "h-[calc(80vh-120px)]" : "h-full";
+export function ParcelDetailsSheet({ parcel, open, onOpenChange, sheetHeight, scrollHeight, isMobile, onGatedAction, onCreateReport }: any) {
   function handleExportPdf() {
     if (!parcel) return;
     const doc = new jsPDF();
@@ -55,7 +36,6 @@ function ParcelDetailsSheet({
     doc.text(`Notes: ${parcel.notes}`, 20, 85);
     doc.save(`parcel-report-${parcel.id}.pdf`);
   }
-  // ...existing code...
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className={sheetHeight}>
@@ -67,8 +47,9 @@ function ParcelDetailsSheet({
             {!parcel ? (
               <div className="mt-6 text-sm text-muted-foreground">Pick a parcel from the list to see details.</div>
             ) : (
-              </>
-            )}
+              <div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold">{parcel.address}</p>
                   <p className="text-xs text-muted-foreground">APN {parcel.apn}</p>
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <Badge variant="outline">{parcel.jurisdiction}</Badge>
@@ -104,9 +85,9 @@ function ParcelDetailsSheet({
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-              </>
+              </div>
             )}
-
+              
             <Separator />
 
             <div className="space-y-2">
