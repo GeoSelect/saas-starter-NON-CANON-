@@ -67,9 +67,8 @@ function ParcelDetailsSheet({
             {!parcel ? (
               <div className="mt-6 text-sm text-muted-foreground">Pick a parcel from the list to see details.</div>
             ) : (
-              <>
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold">{parcel.address}</p>
+              </>
+            )}
                   <p className="text-xs text-muted-foreground">APN {parcel.apn}</p>
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <Badge variant="outline">{parcel.jurisdiction}</Badge>
