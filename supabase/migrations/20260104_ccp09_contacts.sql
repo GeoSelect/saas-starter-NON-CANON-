@@ -89,15 +89,29 @@ CREATE TABLE contact_permissions (
 );
 
 -- Indexes
-CREATE INDEX idx_contacts_workspace_id ON contacts(workspace_id);
-CREATE INDEX idx_contacts_workspace_email ON contacts(workspace_id, email);
-CREATE INDEX idx_contacts_contact_type ON contacts(workspace_id, contact_type);
-CREATE INDEX idx_contacts_verification_status ON contacts(workspace_id, verification_status);
-CREATE INDEX idx_contacts_parcel_id ON contacts(parcel_id);
-CREATE INDEX idx_contact_groups_workspace_id ON contact_groups(workspace_id);
-CREATE INDEX idx_contact_group_members_group_id ON contact_group_members(group_id);
-CREATE INDEX idx_contact_permissions_workspace_user ON contact_permissions(workspace_id, user_id);
-CREATE INDEX idx_contact_permissions_contact_id ON contact_permissions(contact_id);
+-- Contacts
+CREATE INDEX idx_contacts_workspace ON contacts(workspace_id);
+CREATE INDEX idx_contacts_email ON contacts(email);
+CREATE INDEX idx_contacts_type ON contacts(contact_type);
+CREATE INDEX idx_contacts_status ON contacts(membership_status);
+CREATE INDEX idx_contacts_hoa ON contacts(hoa_id);
+CREATE INDEX idx_contacts_parcel ON contacts(parcel_id);
+CREATE INDEX idx_contacts_search ON contacts USING gin(
+  to_tsvector('english', first_name || ' ' || last_name || ' ' || email)
+);
+
+-- Contact groups
+CREATE INDEX idx_contact_groups_workspace ON contact_groups(workspace_id);
+CREATE INDEX idx_contact_groups_type ON contact_groups(group_type);
+
+-- Contact group members
+CREATE INDEX idx_contact_group_members_contact ON contact_group_members(contact_id);
+CREATE INDEX idx_contact_group_members_group ON contact_group_members(group_id);
+
+-- Contact permissions
+CREATE INDEX idx_contact_permissions_user ON contact_permissions(user_id);
+CREATE INDEX idx_contact_permissions_contact ON contact_permissions(contact_id);
+CREATE INDEX idx_contact_permissions_workspace ON contact_permissions(workspace_id);
 
 -- Enable RLS
 ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
