@@ -9,7 +9,8 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('session');
   const isProtectedRoute = pathname.startsWith(protectedRoutes);
 
-  if (isProtectedRoute && !sessionCookie) {
+  // Allow dashboard access without session in development (using mock data fallback)
+  if (isProtectedRoute && !sessionCookie && process.env.NODE_ENV !== 'development') {
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 
@@ -34,7 +35,7 @@ export async function middleware(request: NextRequest) {
     } catch (error) {
       console.error('Error updating session:', error);
       res.cookies.delete('session');
-      if (isProtectedRoute) {
+      if (isProtectedRoute && process.env.NODE_ENV !== 'development') {
         return NextResponse.redirect(new URL('/sign-in', request.url));
       }
     }
