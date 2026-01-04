@@ -10,6 +10,7 @@ import { MapPin, Calendar, ArrowLeft, Download, Share2 } from 'lucide-react';
 import { getReportById } from '../actions';
 import type { Report } from '@/lib/db/schema';
 import type { ParcelResult } from '@/components/parcel/ParcelDetailsSheet';
+import { ShareWithHomeownerButton } from '@/components/share/share-with-homeowner-button';
 
 export default function ReportDetailPage({ params }: { params: { id: string } }) {
   const { user, team } = useApp();
@@ -72,10 +73,17 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
           </div>
 
           <div className="ml-4 flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
+            {/* CCP-12: Share with Homeowner */}
+            <ShareWithHomeownerButton
+              workspaceId={team.id}
+              snapshotId={report.id}
+              trigger={
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Share2 className="h-4 w-4" />
+                  Share with Homeowner
+                </Button>
+              }
+            />
             <Button variant="outline" size="sm" className="gap-2">
               <Download className="h-4 w-4" />
               Export

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowRight, ShieldAlert } from "lucide-react";
+import { ArrowRight, ShieldAlert, Snapshot } from "lucide-react";
 
 export type ParcelResult = {
   id: string;
@@ -23,6 +23,7 @@ type ParcelDetailsSheetProps = {
   onOpenChange: (open: boolean) => void;
   parcel: ParcelResult | null;
   onCreateReport: () => void;
+  onCreateSnapshot?: () => void;
   onGatedAction: (label: string) => void;
   variant?: "mobile" | "desktop";
 };
@@ -32,6 +33,7 @@ export function ParcelDetailsSheet({
   onOpenChange,
   parcel,
   onCreateReport,
+  onCreateSnapshot,
   onGatedAction,
   variant = "desktop",
 }: ParcelDetailsSheetProps) {

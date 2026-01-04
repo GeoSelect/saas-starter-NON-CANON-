@@ -208,6 +208,53 @@ export function useParcelResolve() {
     }
   }
 
+  async function createSnapshot(workspaceId: string, notesText: string) {
+    if (!active) {
+      toast.error("Select a parcel first");
+      throw new Error("No parcel selected");
+    }
+
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceId}/snapshots`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          parcel_id: active.id,
+          parcel_address: active.address,
+          parcel_jurisdiction: active.jurisdiction,
+          parcel_zoning: active.zoning,
+          parcel_apn: active.apn,
+          parcel_sources: active.sources,
+          summary_text: notesText,
+          constraints: {},
+          sources: {},
+          metadata: {
+            latitude: active.lat,
+            longitude: active.lng,
+          },
+        }),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("Sign in to create snapshots");
+      }
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || "Failed to create snapshot");
+      }
+
+      const data = await res.json();
+      toast.success("Snapshot created", {
+        description: `${active.address} has been captured and saved.`,
+      });
+      return data.snapshot;
+    } catch (err: any) {
+      toast.error("Snapshot creation failed", { description: err?.message ?? "Unexpected error" });
+      throw err;
+    }
+  }
+
   function gatedAction(label: string) {
     toast.warning(`${label} requires an account`, {
       description: "Create an account to build your workspace."
@@ -226,6 +273,7 @@ export function useParcelResolve() {
     handleMapClick,
     openParcel,
     createReport,
+    createSnapshot,
     gatedAction,
   };
 }

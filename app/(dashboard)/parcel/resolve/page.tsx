@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight, Info, MapPin, ShieldAlert, Sparkles } from "lucide-react";
+import { ArrowRight, Info, MapPin, ShieldAlert, Sparkles, Loader2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { ParcelList } from "@/components/parcel/ParcelList";
 import { ParcelDetailsSheet } from "@/components/parcel/ParcelDetailsSheet";
 import { MapView } from "@/components/parcel/MapView";
 import { useParcelResolve } from "@/components/parcel/useParcelResolve";
+import { useGeolocation } from "@/components/parcel/useGeolocation";
+import { SnapshotWarningDialog } from "@/components/parcel/SnapshotWarningDialog";
 
 export default function ParcelResolvePage() {
   const {
@@ -27,13 +29,32 @@ export default function ParcelResolvePage() {
     handleMapClick,
     openParcel,
     createReport,
+    createSnapshot,
     gatedAction,
   } = useParcelResolve();
+
+  const { requestLocation, loading: geoLoading } = useGeolocation();
 
   React.useEffect(() => {
     void handleSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const [showSnapshotDialog, setShowSnapshotDialog] = React.useState(false);
+
+  async function handleUseMyLocation() {
+    const location = await requestLocation();
+    if (location) {
+      await handleMapClick(location.lat, location.lng);
+    }
+  }
+
+  async function handleCreateSnapshot(notesText: string) {
+    // TODO: Get workspace ID from context/params
+    const workspaceId = "demo-workspace";
+    await createSnapshot(workspaceId, notesText);
+    setShowSnapshotDialog(false);
+  }
 
   return (
     <div className="mx-auto grid max-w-6xl gap-6 p-6 md:grid-cols-2">
@@ -62,10 +83,24 @@ export default function ParcelResolvePage() {
               {loading ? "Searching..." : "Search parcels"}
             </Button>
 
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <button className="underline decoration-dotted hover:text-foreground">Use my location</button>
-            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => void handleUseMyLocation()} 
+              disabled={geoLoading || loading}
+              className="w-full gap-2"
+            >
+              {geoLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Getting location...
+                </>
+              ) : (
+                <>
+                  <MapPin className="h-4 w-4" />
+                  Use my location
+                </>
+              )}
+            </Button>
           </CardContent>
         </Card>
 

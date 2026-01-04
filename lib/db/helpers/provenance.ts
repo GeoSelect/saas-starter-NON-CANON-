@@ -471,3 +471,85 @@ export async function getParcelProvenance(
     gap_summary,
   };
 }
+
+/**
+ * Get all rules for a snapshot (for shared reports)
+ * Returns rules with their sources
+ */
+export async function getSnapshotRules(snapshotId: string) {
+  const cookieStore = await cookies();
+  const client = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const { data, error } = await client
+    .from("snapshot_rules")
+    .select(
+      `
+      *,
+      snapshot_sources (
+        id,
+        name,
+        type,
+        citation,
+        confidence_level
+      )
+    `
+    )
+    .eq("snapshot_id", snapshotId);
+
+  if (error) {
+    console.error("Error fetching snapshot rules:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+/**
+ * Get all data gaps for a snapshot (for shared reports)
+ */
+export async function getSnapshotGaps(snapshotId: string) {
+  const cookieStore = await cookies();
+  const client = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const { data, error } = await client
+    .from("snapshot_gaps")
+    .select("*")
+    .eq("snapshot_id", snapshotId);
+
+  if (error) {
+    console.error("Error fetching snapshot gaps:", error);
+    return [];
+  }
+
+  return data || [];
+}

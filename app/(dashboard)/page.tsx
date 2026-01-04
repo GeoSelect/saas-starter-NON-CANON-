@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CreditCard, Database } from 'lucide-react';
+import { ArrowRight, CreditCard, Database, Map } from 'lucide-react';
 import { Terminal } from './terminal';
+import Link from 'next/link';
 
 export default function HomePage() {
   return (
@@ -43,7 +44,7 @@ export default function HomePage() {
 
       <section className="py-16 bg-white w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+          <div className="lg:grid lg:grid-cols-4 lg:gap-8">
             <div>
               <div className="flex items-center justify-center h-12 w-12 rounded-md bg-orange-500 text-white">
                 <svg viewBox="0 0 24 24" className="h-6 w-6">
@@ -91,6 +92,28 @@ export default function HomePage() {
                   Seamless payment processing and subscription management with
                   industry-leading Stripe integration.
                 </p>
+              </div>
+            </div>
+
+            <div className="mt-10 lg:mt-0">
+              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-orange-500 text-white">
+                <Map className="h-6 w-6" />
+              </div>
+              <div className="mt-5">
+                <h2 className="text-lg font-medium text-gray-900">
+                  Parcel Search
+                </h2>
+                <p className="mt-2 text-base text-gray-500">
+                  Interactive map-based parcel resolution. Search by address, APN, or click directly on the map.
+                </p>
+                <div className="mt-4">
+                  <Link href="/parcel/resolve">
+                    <Button variant="outline" className="w-full">
+                      Open Parcel Search
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
