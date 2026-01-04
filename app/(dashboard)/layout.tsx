@@ -1,22 +1,22 @@
-import { ReactNode } from "react";
-import { HamburgerNav } from "@/components/nav/hamburger-nav";
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+
+'use client';
+
+import { ReactNode } from 'react';
+import { DashboardHeader } from '@/components/nav/dashboard-header';
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b bg-background">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4">
-          <HamburgerNav />
-          <div className="text-sm font-semibold">GeoSelect.it</div>
-          <div className="ml-auto">{/* account controls */}</div>
-        </div>
-      </header>
-
+      <DashboardHeader />
       <main>{children}</main>
     </div>
   );
 }
-'use client';
 
 import Link from 'next/link';
 import { use, useState, Suspense } from 'react';
@@ -126,11 +126,4 @@ function Header() {
   );
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col min-h-screen">
-      <Header />
-      {children}
-    </section>
-  );
-}
+

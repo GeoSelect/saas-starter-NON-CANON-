@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { HamburgerNav } from "@/components/nav/hamburger-nav";
 import dynamic from "next/dynamic";
 
 // Parcel components
@@ -46,9 +47,37 @@ import { Textarea } from "@/components/ui/textarea";
 // Error boundary
 import { ErrorBoundary } from "@/components/error-boundary";
 
+const NAV_LINKS = [
+  { href: "/mobile-onboarding-choice", label: "Mobile Onboarding" },
+  { href: "/reports", label: "Reports" },
+  { href: "/dashboard/security", label: "Dashboard Security" },
+  { href: "/parcel/resolve", label: "Parcel Resolve" },
+  { href: "/dashboard/general", label: "Dashboard General" },
+  { href: "/all-components", label: "All Components" },
+];
+
 const AllComponentsPage = () => (
-  <div style={{ padding: 24 }}>
+  <div style={{ padding: 24, position: 'relative' }}>
+    <HamburgerNav />
     <h1>All Components Playground</h1>
+    <nav style={{ margin: '16px 0' }}>
+      <ul style={{ display: 'flex', flexWrap: 'wrap', gap: 12, listStyle: 'none', padding: 0 }}>
+        {NAV_LINKS.map(link => (
+          <li key={link.href}>
+            <a href={link.href} style={{
+              padding: '8px 16px',
+              borderRadius: 6,
+              background: '#f3f3f3',
+              color: '#333',
+              textDecoration: 'none',
+              fontWeight: 500,
+              border: '1px solid #e5e7eb',
+              display: 'inline-block',
+            }}>{link.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
     <section>
       <h2>Parcel Components</h2>
       {process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY && <MapView />}
