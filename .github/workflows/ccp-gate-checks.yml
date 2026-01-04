@@ -30,6 +30,30 @@ jobs:
         run: pnpm install
       
       # ============================================
+      # SENTINEL TESTS (Red Line Regression Detection)
+      # ============================================
+      
+      - name: '🚩 CCP-03 Sentinel: Report Creation Integrity'
+        run: |
+          echo "🚩 Running CCP-03 Sentinel Test..."
+          pnpm test -- create.integration.test || {
+            echo "❌ CCP-03 SENTINEL FAILED: Report creation contract broken"
+            echo "rpt-0.1 JSON structure or audit logging has changed"
+            exit 1
+          }
+          echo "✅ CCP-03 Sentinel passed"
+      
+      - name: '🚩 CCP-04 Sentinel: Snapshot Immutability'
+        run: |
+          echo "🚩 Running CCP-04 Sentinel Test..."
+          pnpm test -- snapshots.integration.test || {
+            echo "❌ CCP-04 SENTINEL FAILED: Snapshot immutability broken"
+            echo "Snapshots may be mutable or audit trail incomplete"
+            exit 1
+          }
+          echo "✅ CCP-04 Sentinel passed"
+      
+      # ============================================
       # CCP-03 Gates: Report Creation Integrity
       # ============================================
       
@@ -166,6 +190,10 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ ALL CCP GATES PASSED"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "🚩 SENTINEL TESTS (Red Line Detection)"
+          echo "  ✅ CCP-03: Report creation contract intact"
+          echo "  ✅ CCP-04: Snapshot immutability verified"
           echo ""
           echo "CCP-03: Report Creation Integrity"
           echo "  ✅ Gate 1: Contract tests pass"
