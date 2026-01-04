@@ -5,6 +5,8 @@ import {
   text,
   timestamp,
   integer,
+  jsonb,
+  numeric,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -72,11 +74,13 @@ export const teamsRelations = relations(teams, ({ many }) => ({
   teamMembers: many(teamMembers),
   activityLogs: many(activityLogs),
   invitations: many(invitations),
+  reports: many(reports),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
   teamMembers: many(teamMembers),
   invitationsSent: many(invitations),
+  reports: many(reports),
 }));
 
 export const invitationsRelations = relations(invitations, ({ one }) => ({
@@ -112,6 +116,67 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
+// ---------------------------------------------------------------------------
+// Reports (CCP-04 & CCP-05) — Immutable snapshots of parcel intelligence
+// ---------------------------------------------------------------------------
+export const reports = pgTable('reports', {
+  id: varchar('id', { length: 64 }).primaryKey(),
+  teamId: integer('team_id')
+    .notNull()
+    .references(() => teams.id),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  parcelId: varchar('parcel_id', { length: 128 }).notNull(),
+  address: text('address').notNull(),
+  apn: varchar('apn', { length: 128 }),
+  jurisdiction: text('jurisdiction'),
+  zoning: text('zoning'),
+  // Immutable snapshot of parcel data at time of snapshot
+  parcelSnapshot: jsonb('parcel_snapshot').notNull(),
+  // Evidence and findings
+  findings: jsonb('findings'),
+  // Risk flags and tags
+  tags: jsonb('tags').default([]),
+  // Share link UUID (if shared)
+  shareToken: varchar('share_token', { length: 64 }).unique(),
+  shareTokenExpiresAt: timestamp('share_token_expires_at'),
+  status: varchar('status', { length: 32 }).notNull().default('draft'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  snapshotAt: timestamp('snapshot_at').notNull().defaultNow(),
+});
+
+export const reportsRelations = relations(reports, ({ one }) => ({
+  team: one(teams, {
+    fields: [reports.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [reports.userId],
+    references: [users.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Parcels — geographic parcel data with coordinates for Street View
+// ---------------------------------------------------------------------------
+export const parcels = pgTable('parcels', {
+  id: varchar('id', { length: 128 }).primaryKey(),
+  address: text('address').notNull(),
+  jurisdiction: varchar('jurisdiction', { length: 255 }),
+  zoning: varchar('zoning', { length: 255 }),
+  apn: varchar('apn', { length: 128 }).notNull().unique(),
+  sources: jsonb('sources').default([]),
+  notes: text('notes'),
+  lat: numeric('lat', { precision: 10, scale: 8 }),
+  lng: numeric('lng', { precision: 11, scale: 8 }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Team = typeof teams.$inferSelect;
@@ -127,6 +192,11 @@ export type TeamDataWithMembers = Team & {
     user: Pick<User, 'id' | 'name' | 'email'>;
   })[];
 };
+
+export type Report = typeof reports.$inferSelect;
+export type NewReport = typeof reports.$inferInsert;
+export type Parcel = typeof parcels.$inferSelect;
+export type NewParcel = typeof parcels.$inferInsert;
 
 export enum ActivityType {
   SIGN_UP = 'SIGN_UP',

@@ -25,8 +25,7 @@ export async function supabaseRSC() {
 }
 
 /**
-  * Route Handlers (app/api/.../route.ts):
-
+ * Route Handlers (app/api/.../route.ts):
  * cookie reads + writes.
  */
 export async function supabaseRoute() {
@@ -53,3 +52,10 @@ export async function supabaseRoute() {
     }
   );
 }
+
+/**
+ * Server Actions (form actions, mutations):
+ * cookie reads + writes with error handling.
+ * Alias for supabaseRoute() - same implementation needed.
+ */
+export const supabaseAction = supabaseRoute;
