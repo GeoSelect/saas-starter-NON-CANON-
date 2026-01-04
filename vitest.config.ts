@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    exclude: ['**/*.example.test.ts', '**/workspace-request-helpers.example.test.ts'],
   },
   resolve: {
     alias: {

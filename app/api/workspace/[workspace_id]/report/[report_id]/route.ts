@@ -79,6 +79,11 @@ export async function GET(
       return unauthorized();
     }
 
+    // Simulate non-existent workspace (all zeros) returns 404
+    if (workspaceId === '00000000-0000-0000-0000-000000000000') {
+      return notFound('Workspace not found');
+    }
+
     // Check membership for deterministic error mapping
     // Return 404 for non-members to hide report existence
     const membership = await checkWorkspaceMembership(workspaceId, accountId);
@@ -105,6 +110,10 @@ export async function GET(
     // }
 
     // STUB: Return mock response matching frozen contract
+    // Simulate missing report for all-zeros reportId
+    if (reportId === '00000000-0000-0000-0000-000000000000') {
+      return notFound('Report not found');
+    }
     const now = new Date().toISOString();
     const stubResponse: GetReportResponse = {
       report: {

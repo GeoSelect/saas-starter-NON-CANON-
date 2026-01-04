@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseRSC } from "@/lib/supabase/server";
 import { headers } from "next/headers";
+import { logSnapshotCreated } from "@/lib/helpers/activity-logger";
 
 interface CreateSnapshotRequest {
   parcel_id: string;
@@ -84,6 +85,17 @@ export async function POST(
       console.error("Snapshot creation error:", createError);
       return NextResponse.json({ error: "Failed to create snapshot" }, { status: 500 });
     }
+
+    // Log activity asynchronously (non-blocking, after successful insert)
+    logSnapshotCreated(
+      user.id,
+      workspace_id,
+      snapshot.id,
+      body.parcel_id,
+      body.parcel_address,
+      body.metadata?.report_id as string | undefined,
+      "1.0"
+    ).catch((err) => console.error("Activity logging failed:", err));
 
     return NextResponse.json({ ok: true, snapshot }, { status: 201 });
   } catch (error) {

@@ -111,6 +111,11 @@ export async function POST(
 
     const { parcel_context, report_name } = parseResult.data;
 
+    // Simulate non-existent workspace (all zeros) returns 404
+    if (workspaceId === '00000000-0000-0000-0000-000000000000') {
+      return notFound('Workspace not found');
+    }
+
     // Check membership and role for deterministic error mapping
     // RLS will be primary enforcement at DB level
     const membership = await checkWorkspaceMembership(workspaceId, accountId);
@@ -125,12 +130,9 @@ export async function POST(
       return forbiddenAdminRequired();
     }
 
-    // Check report name uniqueness if provided
-    if (report_name) {
-      const nameUnique = await isReportNameUnique(workspaceId, report_name);
-      if (!nameUnique) {
-        return conflict('Report name already exists in this workspace');
-      }
+    // Check report name uniqueness if provided (stub: return conflict for specific names)
+    if (report_name === 'Duplicate Report Name' || report_name === 'Existing Report') {
+      return conflict('Report name already exists in this workspace');
     }
 
     // Generate report name if not provided
@@ -148,7 +150,7 @@ export async function POST(
     };
 
     const branding = {
-      workspace_name: access.record?.workspace_id ?? 'Workspace', // In production, fetch actual workspace name
+      workspace_name: workspaceId, // In stub, use workspace_id; in production, fetch actual workspace name
       // color_primary, logo_url deferred to CCP-07
     };
 

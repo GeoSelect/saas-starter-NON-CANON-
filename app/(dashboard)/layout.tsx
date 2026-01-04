@@ -1,3 +1,21 @@
+import { ReactNode } from "react";
+import { HamburgerNav } from "@/components/nav/hamburger-nav";
+
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-h-screen">
+      <header className="sticky top-0 z-40 border-b bg-background">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4">
+          <HamburgerNav />
+          <div className="text-sm font-semibold">GeoSelect.it</div>
+          <div className="ml-auto">{/* account controls */}</div>
+        </div>
+      </header>
+
+      <main>{children}</main>
+    </div>
+  );
+}
 'use client';
 
 import Link from 'next/link';

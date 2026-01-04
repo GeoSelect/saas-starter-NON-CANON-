@@ -1,5 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GET } from './route';
+import * as workspaceAccess from '@/lib/db/helpers/workspace-access';
+
+// Mock workspace-access module
+vi.mock('@/lib/db/helpers/workspace-access', () => ({
+  checkWorkspaceMembership: vi.fn(),
+}));
 
 // ============================================================================
 // CCP-06: Workspace Report Get Endpoint Tests
@@ -27,11 +33,17 @@ function makeReq(
   ) as any; // Cast to bypass NextRequest type
 }
 
-// Reset audit events before each test
+// Reset audit events and mocks before each test
 beforeEach(() => {
   if (globalThis.__AUDIT_EVENTS) {
     globalThis.__AUDIT_EVENTS.length = 0;
   }
+  vi.clearAllMocks();
+  // Default: mock returns member status (success path)
+  vi.mocked(workspaceAccess.checkWorkspaceMembership).mockResolvedValue({
+    isMember: true,
+    role: 'member',
+  } as any);
 });
 
 describe('GET /api/workspace/:workspace_id/report/:report_id', () => {
@@ -219,6 +231,11 @@ describe('GET /api/workspace/:workspace_id/report/:report_id', () => {
 
   describe('Membership Enforcement (404 for Non-Members)', () => {
     it('should return 404 when account is not workspace member (hiding existence)', async () => {
+      // Mock non-member status for this test
+      vi.mocked(workspaceAccess.checkWorkspaceMembership).mockResolvedValueOnce({
+        isMember: false,
+      } as any);
+
       const req = makeReq(
         validWorkspaceId,
         validReportId,

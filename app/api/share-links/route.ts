@@ -5,6 +5,7 @@ import {
   listShareLinksBySnapshot,
 } from '@/lib/db/helpers/share-links';
 import { createClient } from '@/lib/supabase/server';
+import { logShareLinkCreated } from '@/lib/helpers/activity-logger';
 
 /**
  * POST /api/share-links
@@ -94,6 +95,20 @@ export async function POST(request: NextRequest) {
         metadata,
       }
     );
+
+    // Log activity asynchronously (non-blocking)
+    // Extract token prefix (first 8 chars) for forensic tracking without leaking secrets
+    const tokenPrefix = shareLink.token ? shareLink.token.substring(0, 8) : 'unknown';
+    logShareLinkCreated(
+      user.id,
+      workspace_id,
+      shareLink.id || 'unknown',
+      snapshot_id,
+      tokenPrefix,
+      expires_at ? new Date(expires_at) : undefined,
+      max_views,
+      requires_auth
+    ).catch((err) => console.error('Activity logging failed:', err));
 
     return NextResponse.json(
       { share_link: shareLink },
