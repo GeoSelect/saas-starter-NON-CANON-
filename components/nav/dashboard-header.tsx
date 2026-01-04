@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { WorkspaceSwitcher } from "@/components/workspace/WorkspaceSwitcher";
 
 export function DashboardHeader() {
   return (
@@ -15,7 +16,8 @@ export function DashboardHeader() {
           GeoSelect.it
         </Link>
         <div className="ml-auto flex items-center gap-2">
-          {/* Add account controls or workspace switcher here */}
+          <WorkspaceSwitcher />
+          {/* Add account controls here */}
         </div>
       </div>
     </header>

@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { WorkspaceSwitcher } from "@/components/workspace/WorkspaceSwitcher";
 
 const NAV_LINKS = [
   { href: "/mobile-onboarding-choice", label: "Mobile Onboarding" },
@@ -39,6 +40,9 @@ export function HamburgerNav() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 text-lg font-bold">Navigation</div>
+            <div className="mb-4">
+              <WorkspaceSwitcher />
+            </div>
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}

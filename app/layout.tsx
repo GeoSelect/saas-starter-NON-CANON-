@@ -5,6 +5,7 @@ import { getUser, getTeamForUser } from '@/lib/db/queries';
 import { SWRConfig } from 'swr';
 import { Toaster } from '@/components/ui/sonner';
 import { AppProvider } from '@/lib/context/AppContext';
+import { WorkspaceContextProvider } from '@/lib/context/WorkspaceContext';
 
 export const metadata: Metadata = {
   title: 'Next.js SaaS Starter',
@@ -29,18 +30,20 @@ export default function RootLayout({
     >
       <body className="min-h-[100dvh] bg-gray-50">
         <AppProvider>
-          <SWRConfig
-            value={{
-              fallback: {
-                // We do NOT await here
-                // Only components that read this data will suspend
-                '/api/user': getUser(),
-                '/api/team': getTeamForUser()
-              }
-            }}
-          >
-            {children}
-          </SWRConfig>
+          <WorkspaceContextProvider>
+            <SWRConfig
+              value={{
+                fallback: {
+                  // We do NOT await here
+                  // Only components that read this data will suspend
+                  '/api/user': getUser(),
+                  '/api/team': getTeamForUser()
+                }
+              }}
+            >
+              {children}
+            </SWRConfig>
+          </WorkspaceContextProvider>
         </AppProvider>
         <Toaster />
       </body>
