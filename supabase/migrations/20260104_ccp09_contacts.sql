@@ -106,177 +106,166 @@ ALTER TABLE contact_group_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_permissions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies: contacts table
--- Contacts can only be viewed by workspace members
-CREATE POLICY contacts_select_policy ON contacts
-  FOR SELECT
-  USING (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
-  );
-
--- Only workspace members can create contacts
-CREATE POLICY contacts_insert_policy ON contacts
-  FOR INSERT
-  WITH CHECK (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
-  );
-
--- Contacts can be updated by workspace members (restricted by app logic)
-CREATE POLICY contacts_update_policy ON contacts
-  FOR UPDATE
-  USING (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
+-- Contacts: workspace membership required
+CREATE POLICY "contacts_workspace_access" ON contacts FOR SELECT TO authenticated
+USING (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users WHERE user_id = auth.uid()
   )
-  WITH CHECK (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
-  );
+);
 
--- Contacts can be deleted by workspace members (restricted by app logic)
-CREATE POLICY contacts_delete_policy ON contacts
-  FOR DELETE
-  USING (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
-  );
+CREATE POLICY "contacts_insert" ON contacts FOR INSERT TO authenticated
+WITH CHECK (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+);
+
+CREATE POLICY "contacts_update" ON contacts FOR UPDATE TO authenticated
+USING (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+)
+WITH CHECK (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+);
+
+CREATE POLICY "contacts_delete" ON contacts FOR DELETE TO authenticated
+USING (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+);
 
 -- RLS Policies: contact_groups table
-CREATE POLICY contact_groups_select_policy ON contact_groups
-  FOR SELECT
-  USING (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
-  );
-
-CREATE POLICY contact_groups_insert_policy ON contact_groups
-  FOR INSERT
-  WITH CHECK (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
-  );
-
-CREATE POLICY contact_groups_update_policy ON contact_groups
-  FOR UPDATE
-  USING (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
+-- Contact groups: workspace membership required
+CREATE POLICY "contact_groups_access" ON contact_groups FOR SELECT TO authenticated
+USING (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users WHERE user_id = auth.uid()
   )
-  WITH CHECK (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
-  );
+);
 
-CREATE POLICY contact_groups_delete_policy ON contact_groups
-  FOR DELETE
-  USING (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
-  );
+CREATE POLICY "contact_groups_insert" ON contact_groups FOR INSERT TO authenticated
+WITH CHECK (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+);
+
+CREATE POLICY "contact_groups_update" ON contact_groups FOR UPDATE TO authenticated
+USING (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+)
+WITH CHECK (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+);
+
+CREATE POLICY "contact_groups_delete" ON contact_groups FOR DELETE TO authenticated
+USING (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+);
 
 -- RLS Policies: contact_group_members table
--- Users can view group members within their workspace
-CREATE POLICY cgm_select_policy ON contact_group_members
-  FOR SELECT
-  USING (
-    group_id IN (
-      SELECT id FROM contact_groups 
-      WHERE workspace_id IN (
-        SELECT workspace_id FROM workspace_members 
-        WHERE user_id = auth.uid()
-      )
-    )
-  );
-
--- Users can add members to groups in their workspace
-CREATE POLICY cgm_insert_policy ON contact_group_members
-  FOR INSERT
-  WITH CHECK (
-    group_id IN (
-      SELECT id FROM contact_groups 
-      WHERE workspace_id IN (
-        SELECT workspace_id FROM workspace_members 
-        WHERE user_id = auth.uid()
-      )
-    )
-  );
-
--- Users can remove members from groups in their workspace
-CREATE POLICY cgm_delete_policy ON contact_group_members
-  FOR DELETE
-  USING (
-    group_id IN (
-      SELECT id FROM contact_groups 
-      WHERE workspace_id IN (
-        SELECT workspace_id FROM workspace_members 
-        WHERE user_id = auth.uid()
-      )
-    )
-  );
-
--- RLS Policies: contact_permissions table
--- Users can view permissions for contacts in their workspace
-CREATE POLICY cp_select_policy ON contact_permissions
-  FOR SELECT
-  USING (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
-  );
-
--- Users can grant permissions on contacts in their workspace
-CREATE POLICY cp_insert_policy ON contact_permissions
-  FOR INSERT
-  WITH CHECK (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
-  );
-
--- Users can revoke/update permissions in their workspace
-CREATE POLICY cp_update_policy ON contact_permissions
-  FOR UPDATE
-  USING (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
+-- Contact group members: via group access
+CREATE POLICY "contact_group_members_access" ON contact_group_members FOR SELECT TO authenticated
+USING (
+  group_id IN (
+    SELECT id FROM contact_groups WHERE workspace_id IN (
+      SELECT workspace_id FROM workspace_users WHERE user_id = auth.uid()
     )
   )
-  WITH CHECK (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
-    )
-  );
+);
 
-CREATE POLICY cp_delete_policy ON contact_permissions
-  FOR DELETE
-  USING (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members 
-      WHERE user_id = auth.uid()
+CREATE POLICY "contact_group_members_insert" ON contact_group_members FOR INSERT TO authenticated
+WITH CHECK (
+  group_id IN (
+    SELECT id FROM contact_groups WHERE workspace_id IN (
+      SELECT workspace_id FROM workspace_users 
+      WHERE user_id = auth.uid() 
+      AND role IN ('owner', 'editor')
     )
-  );
+  )
+);
+
+CREATE POLICY "contact_group_members_delete" ON contact_group_members FOR DELETE TO authenticated
+USING (
+  group_id IN (
+    SELECT id FROM contact_groups WHERE workspace_id IN (
+      SELECT workspace_id FROM workspace_users 
+      WHERE user_id = auth.uid() 
+      AND role IN ('owner', 'editor')
+    )
+  )
+);
+
+-- RLS Policies: contact_permissions table
+-- Contact permissions: user must match or be admin
+CREATE POLICY "contact_permissions_own_access" ON contact_permissions FOR SELECT TO authenticated
+USING (
+  user_id = auth.uid() OR
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+);
+
+CREATE POLICY "contact_permissions_insert" ON contact_permissions FOR INSERT TO authenticated
+WITH CHECK (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+);
+
+CREATE POLICY "contact_permissions_update" ON contact_permissions FOR UPDATE TO authenticated
+USING (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+)
+WITH CHECK (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+);
+
+CREATE POLICY "contact_permissions_delete" ON contact_permissions FOR DELETE TO authenticated
+USING (
+  workspace_id IN (
+    SELECT workspace_id FROM workspace_users 
+    WHERE user_id = auth.uid() 
+    AND role IN ('owner', 'editor')
+  )
+);
