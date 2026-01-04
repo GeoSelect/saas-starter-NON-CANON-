@@ -6,49 +6,111 @@ import { SubmitButton } from './submit-button';
 // Prices are fresh for one hour max
 export const revalidate = 3600;
 
+
 export default async function PricingPage() {
+  // Fetch all Stripe products and prices
   const [prices, products] = await Promise.all([
     getStripePrices(),
     getStripeProducts(),
   ]);
 
-  const basePlan = products.find((product) => product.name === 'Base');
-  const plusPlan = products.find((product) => product.name === 'Plus');
+  // Map plan names to Stripe product names and price amounts
+  const planConfigs = [
+    {
+      name: 'Basic',
+      price: 7499,
+      features: [
+        'Unlimited Usage',
+        'Unlimited Workspace Members',
+        'Email Support',
+      ],
+      stripeName: 'Basic',
+    },
+    {
+      name: 'Pro',
+      price: 9900,
+      features: [
+        'Everything in Basic, and:',
+        'Advanced Analytics',
+        'Priority Support',
+      ],
+      stripeName: 'Pro',
+    },
+    {
+      name: 'Pro+ CRM',
+      price: 19900,
+      features: [
+        'Everything in Pro, and:',
+        'CRM Integration',
+        'Custom Workflows',
+      ],
+      stripeName: 'Pro+ CRM',
+    },
+    {
+      name: 'Pro+ AI',
+      price: 29900,
+      features: [
+        'Everything in Pro+ CRM, and:',
+        'AI-powered Insights',
+        'Automated Data Entry',
+      ],
+      stripeName: 'Pro+ AI',
+    },
+    {
+      name: 'Portfolio',
+      price: 49900,
+      features: [
+        'Everything in Pro+ AI, and:',
+        'Portfolio Management',
+        'Dedicated Account Manager',
+      ],
+      stripeName: 'Portfolio',
+    },
+    {
+      name: 'Enterprise',
+      price: 99900,
+      features: [
+        'Everything in Portfolio, and:',
+        'Custom Integrations',
+        'SLA & Enterprise Support',
+        'Contact us for custom pricing',
+      ],
+      stripeName: 'Enterprise',
+    },
+  ];
 
-  const basePrice = prices.find((price) => price.productId === basePlan?.id);
-  const plusPrice = prices.find((price) => price.productId === plusPlan?.id);
+  // Map each plan config to its Stripe priceId (if available)
+  const plans = planConfigs.map((plan) => {
+    const product = products.find((p) => p.name === plan.stripeName);
+    const price = prices.find((pr) => pr.productId === product?.id);
+    return {
+      ...plan,
+      price: price?.unitAmount ?? plan.price,
+      interval: price?.interval || 'month',
+      trialDays: price?.trialPeriodDays || 7,
+      priceId: price?.id,
+    };
+  });
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="grid md:grid-cols-2 gap-8 max-w-xl mx-auto">
-        <PricingCard
-          name={basePlan?.name || 'Base'}
-          price={basePrice?.unitAmount || 800}
-          interval={basePrice?.interval || 'month'}
-          trialDays={basePrice?.trialPeriodDays || 7}
-          features={[
-            'Unlimited Usage',
-            'Unlimited Workspace Members',
-            'Email Support',
-          ]}
-          priceId={basePrice?.id}
-        />
-        <PricingCard
-          name={plusPlan?.name || 'Plus'}
-          price={plusPrice?.unitAmount || 1200}
-          interval={plusPrice?.interval || 'month'}
-          trialDays={plusPrice?.trialPeriodDays || 7}
-          features={[
-            'Everything in Base, and:',
-            'Early Access to New Features',
-            '24/7 Support + Slack Access',
-          ]}
-          priceId={plusPrice?.id}
-        />
+      <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        {plans.map((plan) => (
+          <PricingCard
+            key={plan.name}
+            name={plan.name}
+            price={plan.price}
+            interval={plan.interval}
+            trialDays={plan.trialDays}
+            features={plan.features}
+            priceId={plan.priceId}
+          />
+        ))}
       </div>
     </main>
   );
 }
+
 
 function PricingCard({
   name,
@@ -65,6 +127,7 @@ function PricingCard({
   features: string[];
   priceId?: string;
 }) {
+  const isDisabled = !priceId;
   return (
     <div className="pt-6">
       <h2 className="text-2xl font-medium text-gray-900 mb-2">{name}</h2>
@@ -86,8 +149,11 @@ function PricingCard({
         ))}
       </ul>
       <form action={checkoutAction}>
-        <input type="hidden" name="priceId" value={priceId} />
-        <SubmitButton />
+        <input type="hidden" name="priceId" value={priceId || ''} />
+        <SubmitButton disabled={isDisabled} />
+        {isDisabled && (
+          <div className="text-xs text-red-500 mt-2">This plan is not available. Please contact support.</div>
+        )}
       </form>
     </div>
   );

@@ -38,6 +38,7 @@
         "drizzle-kit": "^0.31.1",
         "drizzle-orm": "^0.43.1",
         "jose": "^6.0.11",
+        "jspdf": "^4.0.0",
         "lucide-react": "^0.511.0",
         "maplibre-gl": "^5.15.0",
         "nanoid": "^5.1.6",

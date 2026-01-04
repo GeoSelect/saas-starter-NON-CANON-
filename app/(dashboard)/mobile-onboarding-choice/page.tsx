@@ -19,6 +19,12 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { ContactsCsvImport, Contact } from "@/components/contacts/ContactsCsvImport";
+  // Handler for CSV import
+  function handleContactsImport(contacts: Contact[]) {
+    toast.success(`Imported ${contacts.length} contacts (not yet saved)`);
+    // TODO: POST contacts to API for batch creation
+  }
 
 type Mode = "anonymous" | "accountable";
 
@@ -261,7 +267,13 @@ export default function MobileOnboardingChoicePage() {
         </TabsContent>
       </Tabs>
 
+
       <Separator className="my-6" />
+
+      {/* Bulk Contacts Import (CSV) */}
+      <div className="my-8">
+        <ContactsCsvImport onImport={handleContactsImport} />
+      </div>
 
       <p className="text-xs text-muted-foreground">
         This screen is a gating surface: Anonymous mode permits exploration, while accountable mode

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ParcelList } from "@/components/parcel/ParcelList";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { ParcelDetailsSheet } from "@/components/parcel/ParcelDetailsSheet";
 import { MapView } from "@/components/parcel/MapView";
 import { useParcelResolve } from "@/components/parcel/useParcelResolve";
@@ -141,22 +142,44 @@ export default function ParcelResolvePage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold">Results ({parcels.length})</CardTitle>
-            <p className="text-xs text-muted-foreground">Scroll to see all matches.</p>
+            <p className="text-xs text-muted-foreground">Expand a parcel to view details.</p>
           </CardHeader>
           <CardContent className="h-full">
-            <ParcelList parcels={parcels} loading={loading} onSelect={openParcel} variant="desktop" />
+            {loading ? (
+              <ParcelList parcels={[]} loading={true} onSelect={() => {}} variant="desktop" />
+            ) : parcels.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No parcels found.</div>
+            ) : (
+              <Accordion type="multiple" className="space-y-2">
+                {parcels.map((parcel) => (
+                  <AccordionItem key={parcel.id} value={parcel.id}>
+                    <AccordionTrigger>
+                      <div className="flex flex-col text-left">
+                        <span className="font-semibold text-sm">{parcel.address}</span>
+                        <span className="text-xs text-muted-foreground">APN {parcel.apn}</span>
+                        <div className="flex gap-2 mt-1">
+                          <Badge variant="outline">{parcel.jurisdiction}</Badge>
+                          <Badge variant="secondary">{parcel.zoning}</Badge>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <ParcelDetailsSheet
+                        open={true}
+                        onOpenChange={() => {}}
+                        parcel={parcel}
+                        onCreateReport={createReport}
+                        onGatedAction={gatedAction}
+                        variant="desktop"
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      <ParcelDetailsSheet
-        open={openSheet}
-        onOpenChange={setOpenSheet}
-        parcel={active}
-        onCreateReport={createReport}
-        onGatedAction={gatedAction}
-        variant="desktop"
-      />
     </div>
   );
 }

@@ -10,9 +10,13 @@ const NAV_LINKS = [
   { href: "/mobile-onboarding-choice", label: "Mobile Onboarding" },
   { href: "/reports", label: "Reports" },
   { href: "/dashboard/security", label: "Dashboard Security" },
-  { href: "/parcel/resolve", label: "Parcel Resolve" },
   { href: "/dashboard/general", label: "Dashboard General" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/all-components", label: "All Components" },
+];
+
+const DASHBOARD_LINKS = [
+  { href: "/parcel/resolve", label: "Parcel Resolve" },
 ];
 
 export function HamburgerNav() {
@@ -53,6 +57,19 @@ export function HamburgerNav() {
                 {link.label}
               </Link>
             ))}
+            <div className="mt-6 border-t pt-4">
+              <div className="mb-2 text-xs font-semibold text-gray-500">Dashboard</div>
+              {DASHBOARD_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="py-2 px-3 rounded bg-orange-50 hover:bg-orange-100 text-base font-medium text-orange-700 border border-orange-200 mb-2 block text-center"
+                  onClick={() => setOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
           </nav>
         </div>
       )}
