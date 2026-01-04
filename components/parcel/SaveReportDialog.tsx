@@ -72,9 +72,9 @@ export function SaveReportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Save as Report</DialogTitle>
+          <DialogTitle>Save to Workspace</DialogTitle>
           <DialogDescription>
-            Create an immutable snapshot of this parcel's intelligence
+            Create an immutable snapshot in your workspace for future reference
           </DialogDescription>
         </DialogHeader>
 
@@ -136,7 +136,7 @@ export function SaveReportDialog({
                   Saving...
                 </>
               ) : (
-                'Save Report'
+                'Save to Workspace'
               )}
             </Button>
           </div>

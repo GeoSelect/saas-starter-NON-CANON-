@@ -91,14 +91,14 @@ export function ParcelAccordion({ parcel, onCreateReport, onGatedAction, variant
             Save Report
           </Button>
           <Button variant="secondary" className="flex-1 h-11" onClick={onCreateReport}>
-            Create report
+            Save to Workspace
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
         {isMobile && (
           <div className="mt-3 flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-amber-900">
             <ShieldAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
-            <p className="text-xs">Create an account to unlock saving and reports.</p>
+            <p className="text-xs">Create an account to build your workspace with saved reports and snapshots.</p>
           </div>
         )}
       </div>

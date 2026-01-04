@@ -131,13 +131,13 @@ export async function POST(req: Request) {
       return unauthorized();
     }
 
-    async function persistReport(params: {
+    async function saveToWorkspace(params: {
       id: string;
       accountId: string;
       data: CreateReportRequest;
     }) {
       // This API route is for external callers without authenticated context
-      // Persistence should happen through the authenticated server action instead
+      // Workspace persistence should happen through the authenticated server action instead
       // This function is kept for legacy compatibility but does not persist
       return false;
     }
@@ -165,7 +165,7 @@ export async function POST(req: Request) {
     };
 
     // success wrapper keeps contract consistent
-    void persistReport({ id: reportId, accountId, data });
+    void saveToWorkspace({ id: reportId, accountId, data });
     return success(response, 200);
   }
 

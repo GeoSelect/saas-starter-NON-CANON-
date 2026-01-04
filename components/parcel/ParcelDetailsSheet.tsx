@@ -105,22 +105,22 @@ export function ParcelDetailsSheet({
             <div className="space-y-2">
               {isMobile && <p className="text-sm font-semibold">Actions</p>}
               <div className={`flex gap-2 ${isMobile ? "flex-col" : ""}`}>
-                <Button className="flex-1 h-11" onClick={() => onGatedAction("Save parcel")}>
-                  Save parcel
+                <Button className="flex-1 h-11" onClick={() => onGatedAction("Save to Workspace")}>
+                  Save to Workspace
                 </Button>
                 <Button
                   variant="secondary"
                   className="flex-1 h-11"
                   onClick={onCreateReport}
                 >
-                  Create report
+                  More Details
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
               {isMobile && (
                 <div className="mt-3 flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-amber-900">
                   <ShieldAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                  <p className="text-xs">Create an account to unlock saving and reports.</p>
+                  <p className="text-xs">Create an account to build your workspace.</p>
                 </div>
               )}
             </div>

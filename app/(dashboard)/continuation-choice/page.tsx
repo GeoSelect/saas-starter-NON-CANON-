@@ -33,15 +33,15 @@ export default function ContinuationChoicePage() {
           <CardHeader className="space-y-1 pb-3">
             <div className="flex items-center gap-2 text-primary">
               <Lock className="h-5 w-5" aria-hidden />
-              <CardTitle className="text-lg">Save and create an account</CardTitle>
+              <CardTitle className="text-lg">Create Your Workspace</CardTitle>
             </div>
             <p className="text-sm text-muted-foreground">
-              Unlocks reports, snapshots, and accountability for future reviews.
+              Build a persistent workspace for all your reports, snapshots, and analysis.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button className="h-12 w-full" onClick={() => router.push("/sign-up")}>
-              Save and create an account
+              Create Workspace Account
             </Button>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="save-details">

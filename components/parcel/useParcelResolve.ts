@@ -163,7 +163,7 @@ export function useParcelResolve() {
 
   function gatedAction(label: string) {
     toast.warning(`${label} requires an account`, {
-      description: "Create an account to save parcels, snapshots, and reports."
+      description: "Create an account to build your workspace."
     });
   }
 
