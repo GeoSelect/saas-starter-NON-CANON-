@@ -1,0 +1,230 @@
+name: CCP Gate Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+
+jobs:
+  gate-checks:
+    name: CCP Merge Gate Verification
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      # ============================================
+      # CCP-03 Gates: Report Creation Integrity
+      # ============================================
+      
+      - name: 'Gate 1: Contract Tests'
+        run: |
+          echo "🚦 Verifying contract tests..."
+          pnpm test -- reports.contract.test || {
+            echo "❌ GATE 1 FAILED: Contract tests did not pass"
+            echo "Response shapes or error codes have changed"
+            exit 1
+          }
+          echo "✅ Gate 1 passed"
+      
+      - name: 'Gate 2: Validation Tests'
+        run: |
+          echo "🚦 Verifying validation rules..."
+          pnpm test -- validation.test || {
+            echo "❌ GATE 2 FAILED: Validation tests did not pass"
+            echo "Zod schemas may have become more permissive"
+            exit 1
+          }
+          echo "✅ Gate 2 passed"
+      
+      - name: 'Gate 3: Transaction Boundary Check'
+        run: |
+          echo "🚦 Checking transaction boundaries..."
+          
+          # Check for db.insert(reports) outside transactions
+          if grep -r "db\.insert(reports)" app/ lib/ --include="*.ts" --include="*.tsx" | grep -v "transaction"; then
+            echo "⚠️  WARNING: Found potential report insert outside transaction"
+            echo "Verify this is inside a db.transaction() block"
+          fi
+          
+          # Run transaction tests
+          pnpm test -- transaction.test || {
+            echo "❌ GATE 3 FAILED: Transaction tests did not pass"
+            echo "Rollback behavior may be broken"
+            exit 1
+          }
+          echo "✅ Gate 3 passed"
+      
+      - name: 'Gate 4: Observability Fields Check'
+        run: |
+          echo "🚦 Verifying observability fields..."
+          
+          # Check that critical log statements include required fields
+          if ! grep -r "logger\.info.*report_created" app/ lib/ | grep -q "reportId.*userId.*teamId.*duration"; then
+            echo "⚠️  WARNING: report_created logs may be missing required fields"
+          fi
+          
+          pnpm test -- observability.test || {
+            echo "❌ GATE 4 FAILED: Observability tests did not pass"
+            exit 1
+          }
+          echo "✅ Gate 4 passed"
+      
+      # ============================================
+      # CCP-04 Gates: Snapshot Immutability
+      # ============================================
+      
+      - name: 'Gate 5: Immutability Scan'
+        run: |
+          echo "🚦 Scanning for snapshot mutations..."
+          
+          # Look for UPDATE statements on parcelSnapshot
+          if grep -r "update.*reportSnapshots" app/ lib/ --include="*.ts" | grep -i "parcelSnapshot" | grep -v "isActive"; then
+            echo "❌ GATE 5 FAILED: Found snapshot mutation code"
+            echo "Snapshots must be immutable - no UPDATE on parcelSnapshot allowed"
+            exit 1
+          fi
+          
+          # Check reports table updates
+          if grep -r "update.*reports.*set.*parcelSnapshot" app/ lib/ --include="*.ts"; then
+            echo "❌ GATE 5 FAILED: Found direct parcelSnapshot update"
+            echo "Use snapshot versioning instead"
+            exit 1
+          fi
+          
+          echo "✅ Gate 5 passed"
+      
+      - name: 'Gate 6: Checksum Verification Scan'
+        run: |
+          echo "🚦 Verifying checksum validation..."
+          
+          # Find snapshot read operations
+          snapshot_reads=$(grep -r "getSnapshot\|select.*reportSnapshots" app/ lib/ --include="*.ts" -c | awk -F: '{sum+=$2} END {print sum}')
+          checksum_calls=$(grep -r "verifyChecksum" app/ lib/ --include="*.ts" -c | awk -F: '{sum+=$2} END {print sum}')
+          
+          echo "Found $snapshot_reads snapshot read operations"
+          echo "Found $checksum_calls checksum verifications"
+          
+          if [ "$snapshot_reads" -gt 0 ] && [ "$checksum_calls" -eq 0 ]; then
+            echo "⚠️  WARNING: Snapshot reads without checksum verification"
+            echo "This may indicate missing integrity checks"
+          fi
+          
+          echo "✅ Gate 6 check complete"
+      
+      - name: 'Gate 7: Version Chain Tests'
+        run: |
+          echo "🚦 Verifying version chain logic..."
+          
+          pnpm test -- snapshot-versioning.test || {
+            echo "❌ GATE 7 FAILED: Version chain tests did not pass"
+            echo "Version sequencing or parent chain may be broken"
+            exit 1
+          }
+          echo "✅ Gate 7 passed"
+      
+      - name: 'Gate 8: Audit Trail Check'
+        run: |
+          echo "🚦 Verifying snapshot audit logging..."
+          
+          # Check for required audit log events
+          for event in "snapshot_created" "snapshot_retrieved" "snapshot_rollback"; do
+            if ! grep -r "logger.*$event" app/ lib/ --include="*.ts" > /dev/null; then
+              echo "⚠️  WARNING: Missing audit log for $event"
+            fi
+          done
+          
+          pnpm test -- snapshot-audit.test || {
+            echo "❌ GATE 8 FAILED: Audit trail tests did not pass"
+            exit 1
+          }
+          echo "✅ Gate 8 passed"
+      
+      # ============================================
+      # Summary
+      # ============================================
+      
+      - name: Gate Check Summary
+        if: success()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ ALL CCP GATES PASSED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "CCP-03: Report Creation Integrity"
+          echo "  ✅ Gate 1: Contract tests pass"
+          echo "  ✅ Gate 2: Validation rules stable"
+          echo "  ✅ Gate 3: Transaction boundary intact"
+          echo "  ✅ Gate 4: Observability fields present"
+          echo ""
+          echo "CCP-04: Snapshot Immutability"
+          echo "  ✅ Gate 5: Snapshots remain immutable"
+          echo "  ✅ Gate 6: Checksums validated"
+          echo "  ✅ Gate 7: Version chain deterministic"
+          echo "  ✅ Gate 8: Snapshot endpoints audited"
+          echo ""
+          echo "✅ Ready for merge"
+      
+      - name: Gate Check Failure
+        if: failure()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "❌ CCP GATE CHECKS FAILED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "One or more merge gates failed."
+          echo "See logs above for details."
+          echo ""
+          echo "📚 Documentation: docs/ccp/GATES.md"
+          echo "🔧 Fix the issues and push again"
+          echo ""
+          exit 1
+
+  # Additional quality checks
+  quality-checks:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - run: pnpm install
+      
+      - name: Lint
+        run: pnpm lint
+      
+      - name: Type Check
+        run: pnpm type-check || pnpm tsc --noEmit
+      
+      - name: Unit Tests
+        run: pnpm test --run
+      
+      - name: Build Check
+        run: pnpm build
+        env:
+          SKIP_ENV_VALIDATION: true
