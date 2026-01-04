@@ -113,6 +113,53 @@ export function useParcelResolve() {
     }
   }
 
+  async function handleMapClick(lat: number, lng: number) {
+    setLoading(true);
+    setParcels([]);
+    setActive(null);
+
+    try {
+      // Use API endpoint for coordinate-based search
+      const res = await fetch("/api/parcel/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat, lng, mode: "latlng", limit: 20 }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.message || "Failed to resolve parcel");
+      }
+
+      const data = (await res.json()) as ParcelResolveResponse;
+      const results = data.results ?? [];
+      setParcels(results);
+      
+      // If exactly one result, auto-select it
+      if (results.length === 1) {
+        setActive(results[0]);
+        setOpenSheet(true);
+        toast.success("Parcel found", { 
+          description: results[0].address 
+        });
+      } else if (results.length > 1) {
+        toast.info("Multiple parcels found", { 
+          description: `${results.length} parcels near this location. Select one from the list.` 
+        });
+      } else {
+        toast.warning("No parcels found", { 
+          description: "Click a different location or use the search box." 
+        });
+      }
+    } catch (err: any) {
+      toast.error("Map search failed", { 
+        description: err?.message ?? "Try using the search box instead." 
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function openParcel(parcel: ParcelResult) {
     setActive(parcel);
     setOpenSheet(true);
@@ -176,6 +223,7 @@ export function useParcelResolve() {
     openSheet,
     setOpenSheet,
     handleSearch,
+    handleMapClick,
     openParcel,
     createReport,
     gatedAction,

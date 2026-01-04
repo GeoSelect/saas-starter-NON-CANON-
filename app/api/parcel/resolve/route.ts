@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { query, lat, lng } = parsed.data;
+  const { query, lat, lng, mode } = parsed.data;
 
   if (!query && (lat === undefined || lng === undefined)) {
     return NextResponse.json(
@@ -58,6 +58,22 @@ export async function POST(req: Request) {
   }
 
   // Stubbed response; replace with real lookup when backend is ready.
+  // When using lat/lng mode, return stub data with coordinates
+  if (mode === "latlng" && lat !== undefined && lng !== undefined) {
+    return NextResponse.json(
+      {
+        results: [{
+          ...stubResult,
+          lat,
+          lng,
+          notes: `Parcel found at coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}. ${stubResult.notes}`,
+        }],
+        meta: { count: 1, stubbed: true, mode: "latlng" },
+      },
+      { status: 200 }
+    );
+  }
+
   return NextResponse.json(
     {
       results: [stubResult],

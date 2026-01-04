@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ParcelList } from "@/components/parcel/ParcelList";
 import { ParcelDetailsSheet } from "@/components/parcel/ParcelDetailsSheet";
+import { MapView } from "@/components/parcel/MapView";
 import { useParcelResolve } from "@/components/parcel/useParcelResolve";
 
 export default function ParcelResolvePage() {
@@ -23,6 +24,7 @@ export default function ParcelResolvePage() {
     openSheet,
     setOpenSheet,
     handleSearch,
+    handleMapClick,
     openParcel,
     createReport,
     gatedAction,
@@ -69,13 +71,23 @@ export default function ParcelResolvePage() {
 
         <Card>
           <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Interactive Map</CardTitle>
+            <p className="text-xs text-muted-foreground">Click anywhere to search for parcels</p>
+          </CardHeader>
+          <CardContent>
+            <MapView height={300} onMapClick={handleMapClick} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold">How it works</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             <ul className="space-y-2">
               <li className="flex items-start gap-2">
                 <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
-                <span>Search by address or assessor parcel number (APN)</span>
+                <span>Click the map or search by address/APN</span>
               </li>
               <li className="flex items-start gap-2">
                 <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
