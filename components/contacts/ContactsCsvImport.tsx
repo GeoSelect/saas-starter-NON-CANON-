@@ -20,7 +20,8 @@ export function ContactsCsvImport({ onImport }: { onImport: (contacts: Contact[]
     const headers = lines[0].split(",").map((h) => h.trim());
     return lines.slice(1).map((line) => {
       const values = line.split(",");
-      const contact: Contact = {};
+      // Ensure required fields are present
+      const contact: Contact = { name: "", email: "" };
       headers.forEach((header, i) => {
         contact[header] = values[i]?.trim();
       });

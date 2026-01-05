@@ -38,11 +38,14 @@ import { RadioGroup } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Sheet } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// General Settings asset
+import GeneralSettingsPage from "@/app/(dashboard)/settings/general";
 
 // Error boundary
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -137,7 +140,9 @@ const AllComponentsPage = () => (
       {/* <ParcelSheet /> */}
       {/* <SaveReportDialog open={false} onOpenChange={() => {}} /> */}
       {/* <SnapshotWarningDialog open={false} onOpenChange={() => {}} /> */}
-      {process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY && <StreetViewPano />}
+      {process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY && (
+        <StreetViewPano lat={40.0} lng={-105.0} />
+      )}
     </section>
     <section>
       <h2>UI Components</h2>
@@ -183,7 +188,24 @@ const AllComponentsPage = () => (
         </SelectContent>
       </Select>
       <Separator />
-      <Sheet />
+      {/* Minimal Sheet Example */}
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="outline">Open Sheet</Button>
+        </SheetTrigger>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Sheet Title</SheetTitle>
+            <SheetDescription>This is a minimal Sheet example.</SheetDescription>
+          </SheetHeader>
+          <div className="p-4">Sheet content goes here.</div>
+          <SheetFooter>
+            <SheetClose asChild>
+              <Button variant="secondary">Close</Button>
+            </SheetClose>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
       <Skeleton />
       <Switch />
       <Tabs>
@@ -198,9 +220,16 @@ const AllComponentsPage = () => (
     </section>
     <section>
       <h2>Error Boundary</h2>
-      <ErrorBoundary>
+      <ErrorBoundary operation="Test Error Boundary">
         <div>Test Error Boundary</div>
       </ErrorBoundary>
+    </section>
+    <section>
+      <h2>General Settings Assets</h2>
+      <p className="mb-4 text-gray-600">Reusable assets from the General Settings page, such as the logo upload field.</p>
+      <div className="max-w-md">
+        <GeneralSettingsPage />
+      </div>
     </section>
   </div>
 );

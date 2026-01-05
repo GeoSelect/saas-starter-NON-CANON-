@@ -134,7 +134,7 @@ describe('CCP-04: Snapshot Immutability Sentinel', () => {
     const fetched = await db.select().from(reports).where(eq(reports.id, reportId));
     expect(fetched).toHaveLength(1);
 
-    const readChecksum = calculateChecksum(fetched[0].parcelSnapshot);
+    const readChecksum = calculateChecksum(fetched[0].parcelSnapshot as object);
     expect(readChecksum).toBe(originalChecksum);
 
     // Log successful creation
@@ -280,8 +280,8 @@ describe('CCP-04: Snapshot Immutability Sentinel', () => {
     // Retrieve snapshot
     const v1Fetched = await db.select().from(reports).where(eq(reports.id, reportId));
 
-    expect(v1Fetched[0].parcelSnapshot.version).toBe(1);
-    const v1ReadChecksum = calculateChecksum(v1Fetched[0].parcelSnapshot);
+    expect((v1Fetched[0].parcelSnapshot as any).version).toBe(1);
+    const v1ReadChecksum = calculateChecksum(v1Fetched[0].parcelSnapshot as object);
     expect(v1ReadChecksum).toBe(v1Checksum);
 
     // Create audit entry for retrieval
@@ -417,7 +417,7 @@ describe('CCP-04: Snapshot Immutability Sentinel', () => {
     // Multiple reads with checksum verification
     for (let i = 0; i < 3; i++) {
       const fetched = await db.select().from(reports).where(eq(reports.id, reportId));
-      const readChecksum = calculateChecksum(fetched[0].parcelSnapshot);
+      const readChecksum = calculateChecksum(fetched[0].parcelSnapshot as object);
 
       expect(readChecksum).toBe(originalChecksum);
 

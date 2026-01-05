@@ -6,8 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowRight, ShieldAlert, Snapshot } from "lucide-react";
-import { Home, Info } from "lucide-react";
+import { ArrowRight, ShieldAlert } from "lucide-react";
+import { Home, Info, Share2, MessagesSquare } from "lucide-react";
+import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AccessDeniedPaywall } from "@/components/ui/AccessDeniedPaywall";
+import { ContactSelector } from "@/components/contacts/contact-selector";
 
 export type ParcelResult = {
   id: string;
@@ -22,6 +26,10 @@ export type ParcelResult = {
 }
 
 export function ParcelDetailsSheet({ parcel, open, onOpenChange, sheetHeight, scrollHeight, isMobile, onGatedAction, onCreateReport }: any) {
+    const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
+    const [selectedContact, setSelectedContact] = React.useState<string | undefined>(undefined);
+    // Simulate paygate state (replace with real logic)
+    const [paygate, setPaygate] = React.useState(false);
   function handleExportPdf() {
     if (!parcel) return;
     const doc = new jsPDF();
@@ -70,7 +78,7 @@ export function ParcelDetailsSheet({ parcel, open, onOpenChange, sheetHeight, sc
                   <AccordionItem value="sources">
                     <AccordionTrigger className="text-sm font-medium">Sources</AccordionTrigger>
                     <AccordionContent className="space-y-2 text-sm text-muted-foreground">
-                      {parcel.sources.map((src) => (
+                      {parcel.sources.map((src: string) => (
                         <div key={src} className="flex items-center gap-2">
                           <span className={`h-2 w-2 rounded-full bg-primary ${isMobile ? "flex-shrink-0" : ""}`} />
                           <span>{src}</span>
@@ -93,7 +101,7 @@ export function ParcelDetailsSheet({ parcel, open, onOpenChange, sheetHeight, sc
             <div className="space-y-2">
               {isMobile && <p className="text-sm font-semibold">Actions</p>}
               <div className={`flex gap-2 ${isMobile ? "flex-col" : ""}`}>
-                <Button className="flex-1 h-11" onClick={() => onGatedAction("Save to Workspace")}>\n                  Save to Workspace\n                </Button>
+                <Button className="flex-1 h-11" onClick={() => onGatedAction("Save to Workspace")}>Save to Workspace</Button>
                 <Button
                   variant="secondary"
                   className="flex-1 h-11"
@@ -103,6 +111,43 @@ export function ParcelDetailsSheet({ parcel, open, onOpenChange, sheetHeight, sc
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <ExportPdfButton onClick={handleExportPdf} />
+                <Share2
+                  className="h-11 w-11 p-2 text-primary cursor-pointer hover:bg-accent rounded"
+                  aria-label="Share My Report"
+                  onClick={() => setShareDialogOpen(true)}
+                />
+                        {/* Share Report Dialog */}
+                        <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+                          <DialogContent>
+                            {paygate ? (
+                              <AccessDeniedPaywall />
+                            ) : (
+                              <>
+                                <DialogHeader>
+                                  <DialogTitle>Share My Report</DialogTitle>
+                                  <DialogDescription>Select a contact to share this report with.</DialogDescription>
+                                </DialogHeader>
+                                <div className="py-2">
+                                  <ContactSelector
+                                    workspaceId={parcel?.workspaceId || ''}
+                                    value={selectedContact}
+                                    onValueChange={setSelectedContact}
+                                  />
+                                </div>
+                                <Button
+                                  disabled={!selectedContact}
+                                  onClick={() => {
+                                    // Simulate paygate trigger
+                                    setPaygate(true);
+                                  }}
+                                  className="w-full mt-2"
+                                >
+                                  Share Report
+                                </Button>
+                              </>
+                            )}
+                          </DialogContent>
+                        </Dialog>
               </div>
               {isMobile && (
                 <div className="mt-3 flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-amber-900">
@@ -115,9 +160,18 @@ export function ParcelDetailsSheet({ parcel, open, onOpenChange, sheetHeight, sc
         </ScrollArea>
         {/* Bottom container and footer */}
         <div className="w-full border-t pt-3 pb-4 bg-background flex flex-col items-center">
-          <div className="flex gap-4 mb-2">
+          <div className="flex gap-8 mb-2 items-center justify-center">
             <Button variant="ghost" size="icon" aria-label="Home" onClick={() => onGatedAction("Go Home")}> 
               <Home className="h-6 w-6" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Chat"
+              className="rounded-full bg-background border border-muted shadow h-12 w-12 flex items-center justify-center mx-2"
+              onClick={() => onGatedAction("Open Chat")}
+            >
+              <MessagesSquare className="h-7 w-7 text-primary" />
             </Button>
             <Button variant="ghost" size="icon" aria-label="Details" onClick={onCreateReport}>
               <Info className="h-6 w-6" />

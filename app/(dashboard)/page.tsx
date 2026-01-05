@@ -5,6 +5,7 @@ import { ParcelDetailsSheet, ParcelResult } from '@/components/parcel/ParcelDeta
 import { ShareButton } from '@/components/ui/ShareButton';
 import { ExportPdfButton } from '@/components/ui/ExportPdfButton';
 import { Terminal } from './terminal';
+import { AwesomeLandingMap } from '@/components/ui/AwesomeLandingMap';
 import Link from 'next/link';
 
 
@@ -100,7 +101,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
-              <Terminal />
+              <AwesomeLandingMap />
             </div>
           </div>
         </div>

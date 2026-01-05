@@ -58,7 +58,7 @@ function MapView({ height = 240, onMapClick, parcelBoundary, parcelCenter }: Map
     { label: "3D Buildings", value: "https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json" },
     { label: "Topography", value: "https://tiles.stadiamaps.com/styles/outdoors.json" }, // Public topography style
   ];
-  const [mapStyle, setMapStyle] = React.useState(basemapOptions[0].value);
+  const [mapStyle, setMapStyle] = React.useState(basemapOptions[4].value); // Default to Topography
 
   // Pitch and bearing controls
   const [pitch, setPitch] = React.useState(0);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { GeoLocationButton } from '@/components/ui/GeoLocationButton';
 import { supabaseBrowser } from '@/lib/supabase/client';
 
 export default function SignInPage() {
@@ -29,6 +30,9 @@ export default function SignInPage() {
 
   return (
     <div style={{ padding: 24, maxWidth: 420 }}>
+      <div style={{ marginBottom: 20 }}>
+        <GeoLocationButton />
+      </div>
       <h1 style={{ fontSize: 20, fontWeight: 600, marginBottom: 12 }}>Sign in</h1>
       <form onSubmit={sendLink}>
         <label style={{ display: 'block', marginBottom: 8 }}>Email</label>

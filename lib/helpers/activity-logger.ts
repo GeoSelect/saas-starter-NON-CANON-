@@ -30,7 +30,7 @@ export async function logActivity({
   requestId,
 }: LogActivityOptions): Promise<void> {
   try {
-    const supabase = supabaseRSC();
+    const supabase = await supabaseRSC();
 
     const { error } = await supabase.from("activities").insert({
       user_id: userId,

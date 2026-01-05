@@ -54,7 +54,7 @@ describe("POST /api/workspaces/[workspace_id]/snapshots", () => {
         }),
       });
 
-      const res = await snapshotPOST(req, {
+      const res = await snapshotPOST(req as unknown as import("next/server").NextRequest, {
         params: Promise.resolve({ workspace_id: "test-ws" }),
       });
 
@@ -91,7 +91,7 @@ describe("POST /api/workspaces/[workspace_id]/snapshots", () => {
         }),
       });
 
-      const res = await snapshotPOST(req, {
+      const res = await snapshotPOST(req as unknown as import("next/server").NextRequest, {
         params: Promise.resolve({ workspace_id: "test-ws" }),
       });
 
@@ -161,7 +161,7 @@ describe("POST /api/workspaces/[workspace_id]/snapshots", () => {
         }),
       });
 
-      const res = await snapshotPOST(req, {
+      const res = await snapshotPOST(req as unknown as import("next/server").NextRequest, {
         params: Promise.resolve({ workspace_id: mockWorkspaceId }),
       });
 
@@ -198,7 +198,7 @@ describe("POST /api/workspaces/[workspace_id]/snapshots", () => {
         }),
       });
 
-      const res = await snapshotPOST(req, {
+      const res = await snapshotPOST(req as unknown as import("next/server").NextRequest, {
         params: Promise.resolve({ workspace_id: "test-ws" }),
       });
 
@@ -247,7 +247,7 @@ describe("POST /api/workspaces/[workspace_id]/snapshots", () => {
         }),
       });
 
-      const res = await snapshotPOST(req, {
+      const res = await snapshotPOST(req as unknown as import("next/server").NextRequest, {
         params: Promise.resolve({ workspace_id: "test-ws" }),
       });
 
@@ -305,7 +305,7 @@ describe("POST /api/workspaces/[workspace_id]/snapshots", () => {
         }),
       });
 
-      const res = await snapshotPOST(req, {
+      const res = await snapshotPOST(req as unknown as import("next/server").NextRequest, {
         params: Promise.resolve({ workspace_id: "ws-456" }),
       });
 

@@ -435,7 +435,7 @@ describe("Gap Detection Logic", () => {
     };
 
     const sorted = gaps.sort(
-      (a, b) => severityOrder[a.severity] - severityOrder[b.severity]
+      (a, b) => severityOrder[a.severity as keyof typeof severityOrder] - severityOrder[b.severity as keyof typeof severityOrder]
     );
 
     expect(sorted[0].severity).toBe("critical");
