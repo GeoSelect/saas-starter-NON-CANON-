@@ -1,10 +1,7 @@
 import { checkoutAction } from '@/lib/payments/actions';
 import { Check } from 'lucide-react';
 import { getStripePrices, getStripeProducts } from '@/lib/payments/stripe';
-import { SubmitButton } from './submit-button';
-
-// Prices are fresh for one hour max
-export const revalidate = 3600;
+import { SubmitButton } from './submit-button'; 
 
 
 export default async function PricingPage() {
@@ -23,14 +20,6 @@ export default async function PricingPage() {
         'Unlimited Usage',
         'Unlimited Workspace Members',
         'Email Support',
-      ],
-      stripeName: 'Basic',
-    },
-    {
-      name: 'Pro',
-      price: 9900,
-      features: [
-        'Everything in Basic, and:',
         'Advanced Analytics',
         'Priority Support',
       ],

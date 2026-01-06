@@ -1,4 +1,5 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ParcelSnapshotDrawer } from "./ParcelSnapshotDrawer";
 import { ExportPdfButton } from "@/components/ui/ExportPdfButton";
 import jsPDF from "jspdf";
 import { Badge } from "@/components/ui/badge";
@@ -26,10 +27,12 @@ export type ParcelResult = {
 }
 
 export function ParcelDetailsSheet({ parcel, open, onOpenChange, sheetHeight, scrollHeight, isMobile, onGatedAction, onCreateReport }: any) {
-    const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
-    const [selectedContact, setSelectedContact] = React.useState<string | undefined>(undefined);
-    // Simulate paygate state (replace with real logic)
-    const [paygate, setPaygate] = React.useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
+  const [selectedContact, setSelectedContact] = React.useState<string | undefined>(undefined);
+  // Simulate paygate state (replace with real logic)
+  const [paygate, setPaygate] = React.useState(false);
+  // State for CCP-04 Parcel Snapshot Drawer
+  const [snapshotDrawerOpen, setSnapshotDrawerOpen] = React.useState(false);
   function handleExportPdf() {
     if (!parcel) return;
     const doc = new jsPDF();
@@ -102,6 +105,13 @@ export function ParcelDetailsSheet({ parcel, open, onOpenChange, sheetHeight, sc
               {isMobile && <p className="text-sm font-semibold">Actions</p>}
               <div className={`flex gap-2 ${isMobile ? "flex-col" : ""}`}>
                 <Button className="flex-1 h-11" onClick={() => onGatedAction("Save to Workspace")}>Save to Workspace</Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 h-11"
+                  onClick={() => setSnapshotDrawerOpen(true)}
+                >
+                  View Parcel Snapshot
+                </Button>
                 <Button
                   variant="secondary"
                   className="flex-1 h-11"
@@ -180,6 +190,7 @@ export function ParcelDetailsSheet({ parcel, open, onOpenChange, sheetHeight, sc
           <footer className="text-xs text-muted-foreground">© {new Date().getFullYear()} GeoSelect</footer>
         </div>
       </SheetContent>
+      <ParcelSnapshotDrawer open={snapshotDrawerOpen} onOpenChange={setSnapshotDrawerOpen} parcel={parcel} />
     </Sheet>
   );
 }

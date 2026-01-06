@@ -5,7 +5,7 @@ import {
   trackShareLinkView,
   revokeShareLink,
 } from '@/lib/db/helpers/share-links';
-import { createClient } from '@/lib/supabase/server';
+import { supabaseRoute } from '@/lib/supabase/server';
 
 /**
  * GET /api/share-links/[token]
@@ -32,7 +32,7 @@ export async function GET(
   { params }: { params: { token: string } }
 ) {
   try {
-    const supabase = await createClient();
+    const supabase = await supabaseRoute();
     const {
       data: { user },
     } = await supabase.auth.getUser();

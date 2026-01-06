@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+// import removed: createClient is not exported from supabase/server
 import { v4 as uuid } from 'uuid';
 import crypto from 'crypto';
 
@@ -38,7 +38,7 @@ export async function createShareLink(
     metadata?: Record<string, any>;
   }
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   // Generate secure token and short code
   const token = generateToken();
@@ -79,7 +79,7 @@ export async function createShareLink(
  * Get share link by token
  */
 export async function getShareLinkByToken(token: string) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { data, error } = await supabase
     .from('share_links')
@@ -98,7 +98,7 @@ export async function getShareLinkByToken(token: string) {
  * Get share link by short code
  */
 export async function getShareLinkByShortCode(shortCode: string) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { data, error } = await supabase
     .from('share_links')
@@ -168,7 +168,7 @@ export async function trackShareLinkView(
   ipAddress?: string,
   userAgent?: string
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   try {
     // Increment view count
@@ -217,7 +217,7 @@ export async function createShareLinkEvent(
   actorUserAgent?: string,
   metadata?: Record<string, any>
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   try {
     await supabase
@@ -241,7 +241,7 @@ export async function createShareLinkEvent(
  * Revoke a share link
  */
 export async function revokeShareLink(shareLinkId: string, revokedBy: string) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const revokedAt = new Date();
 
@@ -271,7 +271,7 @@ export async function listShareLinksBySnapshot(
   snapshotId: string,
   includeRevoked = false
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   let query = supabase
     .from('share_links')
@@ -296,7 +296,7 @@ export async function listShareLinksByWorkspace(
   workspaceId: string,
   includeRevoked = false
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   let query = supabase
     .from('share_links')
@@ -318,7 +318,7 @@ export async function listShareLinksByWorkspace(
  * Get share link with snapshot and report details
  */
 export async function getShareLinkWithDetails(token: string) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { data, error } = await supabase
     .from('share_links')
@@ -362,7 +362,7 @@ export async function updateShareLink(
     metadata?: Record<string, any>;
   }
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { data, error } = await supabase
     .from('share_links')
@@ -385,7 +385,7 @@ export async function updateShareLink(
  * Delete expired share links (cleanup)
  */
 export async function deleteExpiredShareLinks(retentionDays = 30) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const cutoffDate = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
 
@@ -402,7 +402,7 @@ export async function deleteExpiredShareLinks(retentionDays = 30) {
  * Get all events (audit trail) for a share link
  */
 export async function getShareLinkEvents(shareLinkId: string) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { data, error } = await supabase
     .from('share_link_events')

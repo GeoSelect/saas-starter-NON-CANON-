@@ -1,10 +1,12 @@
 
+'use client';
+
+import 'maplibre-gl/dist/maplibre-gl.css';
 import dynamic from "next/dynamic";
 import React from "react";
 import { AwesomeOverlayLayers } from "./AwesomeOverlayLayers";
 
-const MapLibreGL = dynamic(() => import("react-map-gl"), { ssr: false });
-
+const MapLibreGL = dynamic(() => import("react-map-gl/maplibre"), { ssr: false });
 export function AwesomeLandingMap() {
   // Example: Centered on San Francisco
   const [viewState, setViewState] = React.useState({
