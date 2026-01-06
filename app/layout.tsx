@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={g-white dark:bg-gray-950 text-black dark:text-white $manrope.className}}
+      className={`bg-white dark:bg-gray-950 text-black dark:text-white ${manrope.className}`}
     >
       <body className="min-h-[100dvh] bg-gray-50">
         <AppProvider>
@@ -61,3 +61,4 @@ export default function RootLayout({
     </html>
   );
 }
+

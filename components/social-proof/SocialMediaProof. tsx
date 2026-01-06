@@ -1,0 +1,77 @@
+﻿"use client";
+
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Twitter, Linkedin, MessageCircle } from "lucide-react";
+
+type SocialPost = {
+  platform: "twitter" | "linkedin";
+  author: string;
+  handle: string;
+  content: string;
+  likes: number;
+};
+
+// 🎯 POST-LAUNCH: Pull from real social media APIs or embed actual tweets
+const posts: SocialPost[] = [
+  {
+    platform: "twitter",
+    author: "David Kim",
+    handle: "@davidkim_dev",
+    content: "Just closed a deal 30% faster using @GeoSelectIt.  The parcel research features are ��",
+    likes: 47,
+  },
+  {
+    platform: "linkedin",
+    author: "Jessica Martinez",
+    handle: "jessica-m-realestate",
+    content: "GeoSelect has transformed how our team evaluates properties.  Highly recommend for any developer.",
+    likes: 128,
+  },
+];
+
+export function SocialMediaProof() {
+  return (
+    <div className="w-full space-y-3 sm:space-y-4">
+      <div className="flex items-center justify-between px-1">
+        <h3 className="text-base sm:text-lg font-semibold">
+          What People Are Saying
+        </h3>
+        <Badge variant="outline" className="text-xs shrink-0">
+          <MessageCircle className="mr-1 h-3 w-3" />
+          Live
+        </Badge>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {posts. map((post, idx) => (
+          <Card key={idx} className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <div className="flex items-start gap-3">
+                {post.platform === "twitter" ?  (
+                  <Twitter className="h-5 w-5 text-blue-400 shrink-0" />
+                ) : (
+                  <Linkedin className="h-5 w-5 text-blue-600 shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold truncate">{post. author}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {post.handle}
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-foreground leading-relaxed mb-2">
+                {post.content}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                ❤️ {post.likes} {post.likes === 1 ?  'like' : 'likes'}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
