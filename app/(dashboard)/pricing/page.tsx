@@ -3,6 +3,14 @@ import { Check } from 'lucide-react';
 import { getStripePrices, getStripeProducts } from '@/lib/payments/stripe';
 import { SubmitButton } from './submit-button'; 
 
+export default async function PricingPage() {
+  // Fetch all Stripe products and prices
+  const [prices, products] = await Promise.all([
+    getStripePrices(),
+    getStripeProducts(),
+  ]);
+
+
 
 export default async function PricingPage() {
   // Fetch all Stripe products and prices
