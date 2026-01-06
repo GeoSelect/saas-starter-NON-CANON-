@@ -2,6 +2,7 @@
 
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { AuthProvider } from '@/lib/context/AuthContext';
 import { useState } from 'react';
 import { Search, MapPin, ChevronRight } from 'lucide-react';
@@ -55,18 +56,19 @@ function SearchParcelPageContent() {
   };
 
   return (
-    <main className="pb-24">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
-      <div className="px-4 py-8 max-w-2xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Find a Parcel</h1>
-        <p className="text-gray-600">
-          Search for any property address and view street-level imagery
-        </p>
-      </div>
+      <main className="flex-grow px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Find a Parcel</h1>
+            <p className="text-gray-600">
+              Search for any property address and view street-level imagery
+            </p>
+          </div>
 
-      {/* Search Form */}
-      <div className="relative mb-6">
+          {/* Search Form */}
+          <div className="relative mb-6">
         <div className="relative">
           <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
           <input
@@ -93,59 +95,61 @@ function SearchParcelPageContent() {
             ))}
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Search Button */}
-      <button
-        onClick={() => address && handleSearch(address)}
-        disabled={!address || loading}
-        className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 transition-colors font-semibold mb-8 flex items-center justify-center gap-2"
-      >
-        {loading ? 'Searching...' : 'Search Property'}
-        <ChevronRight className="w-4 h-4" />
-      </button>
+        {/* Search Button */}
+        <button
+          onClick={() => address && handleSearch(address)}
+          disabled={!address || loading}
+          className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 transition-colors font-semibold mb-8 flex items-center justify-center gap-2"
+        >
+          {loading ? 'Searching...' : 'Search Property'}
+          <ChevronRight className="w-4 h-4" />
+        </button>
 
-      {/* Example Searches */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Try these examples:</h3>
-        <div className="space-y-2">
-          {mockAddresses.slice(0, 3).map((addr, index) => (
-            <button
+        {/* Example Searches */}
+        <div className="bg-gray-50 rounded-lg p-6">
+          <h3 className="font-semibold text-gray-900 mb-4">Try these examples:</h3>
+          <div className="space-y-2">
+            {mockAddresses.slice(0, 3).map((addr, index) => (
+              <button
               key={index}
               onClick={() => handleSearch(addr)}
               className="w-full text-left px-4 py-2 bg-white hover:bg-orange-50 border border-gray-200 rounded-lg transition-colors text-gray-700 text-sm"
             >
               {addr}
             </button>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Features Info */}
-      <div className="mt-8 space-y-4">
-        <div className="border-l-4 border-orange-500 pl-4">
-          <h4 className="font-semibold text-gray-900">Google Address Search</h4>
-          <p className="text-gray-600 text-sm mt-1">
-            Autocomplete powered by Google Places API with real-time suggestions
-          </p>
+        {/* Features Info */}
+        <div className="mt-8 space-y-4">
+          <div className="border-l-4 border-orange-500 pl-4">
+            <h4 className="font-semibold text-gray-900">Google Address Search</h4>
+            <p className="text-gray-600 text-sm mt-1">
+              Autocomplete powered by Google Places API with real-time suggestions
+            </p>
+          </div>
+          <div className="border-l-4 border-orange-500 pl-4">
+            <h4 className="font-semibold text-gray-900">Street View Ready</h4>
+            <p className="text-gray-600 text-sm mt-1">
+              View 360° street-level imagery from Google Street View
+            </p>
+          </div>
+          <div className="border-l-4 border-orange-500 pl-4">
+            <h4 className="font-semibold text-gray-900">No Sign-up Required</h4>
+            <p className="text-gray-600 text-sm mt-1">
+              Search and view parcels without creating an account
+            </p>
+          </div>
         </div>
-        <div className="border-l-4 border-orange-500 pl-4">
-          <h4 className="font-semibold text-gray-900">Street View Ready</h4>
-          <p className="text-gray-600 text-sm mt-1">
-            View 360° street-level imagery from Google Street View
-          </p>
         </div>
-        <div className="border-l-4 border-orange-500 pl-4">
-          <h4 className="font-semibold text-gray-900">No Sign-up Required</h4>
-          <p className="text-gray-600 text-sm mt-1">
-            Search and view parcels without creating an account
-          </p>
-        </div>
-      </div>
+      </main>
 
+      <Footer />
       <BottomNavigation />
-      </div>
-    </main>
+    </div>
   );
 }
 

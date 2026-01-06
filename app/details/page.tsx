@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { AuthProvider } from '@/lib/context/AuthContext';
 import { FileText, MapPin, DollarSign, Calendar } from 'lucide-react';
 
@@ -27,9 +29,9 @@ function DetailsPageContent() {
   };
 
   return (
-    <main className="pb-24">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
-      <div className="px-4 py-8">
+      <main className="flex-grow px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Parcel Details</h1>
           <p className="text-gray-600 mb-6">{parcelDetails.id}</p>
@@ -97,17 +99,17 @@ function DetailsPageContent() {
 
           {/* Action Buttons */}
           <div className="flex gap-3 mt-8">
-            <button className="flex-1 px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium">
+            <Link href="/feature-gating" className="flex-1 px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-center">
               Edit Details
-            </button>
-            <button className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+            </Link>
+            <Link href="/search/view" className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center">
               View Map
-            </button>
+            </Link>
           </div>
         </div>
-      </div>
-
+      </main>
+      <Footer />
       <BottomNavigation />
-    </main>
+    </div>
   );
 }

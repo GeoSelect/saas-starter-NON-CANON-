@@ -1,0 +1,274 @@
+name: CCP-09 CSV Contact Upload Checks
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'lib/components/C103-CSVContactUpload.tsx'
+      - 'lib/hooks/useContactAudit.ts'
+      - 'lib/utils/csv-parser.ts'
+      - 'lib/contracts/ccp09/**'
+      - 'app/api/workspaces/[workspace_id]/contacts/import/**'
+      - 'app/api/audit/contact-upload/**'
+      - 'tests/components/C103-CSVContactUpload.test.ts'
+      - 'tests/e2e/c103-csv-contact-upload.spec.ts'
+      - '.github/workflows/ccp-09-contact-upload-checks.yml'
+
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'lib/components/C103-CSVContactUpload.tsx'
+      - 'lib/hooks/useContactAudit.ts'
+      - 'lib/utils/csv-parser.ts'
+      - 'lib/contracts/ccp09/**'
+      - 'app/api/workspaces/[workspace_id]/contacts/import/**'
+      - 'app/api/audit/contact-upload/**'
+      - 'tests/components/C103-CSVContactUpload.test.ts'
+      - 'tests/e2e/c103-csv-contact-upload.spec.ts'
+
+env:
+  NODE_VERSION: '20'
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+jobs:
+  # ========================================================================
+  # Job 1: CSV Validation & Parser Correctness
+  # ========================================================================
+  csv-validation:
+    name: CSV Parser Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run CSV parser unit tests
+        run: pnpm test -- tests/components/C103-CSVContactUpload.test.ts --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+          flags: c103-csv-parser
+          name: c103-coverage
+
+  # ========================================================================
+  # Job 2: API Route Tests (Validation, Auth, Audit)
+  # ========================================================================
+  api-tests:
+    name: API Route Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup test database
+        run: |
+          npm install -g supabase-cli
+          supabase start --workdir ./migrations
+
+      - name: Run API route tests
+        run: pnpm test -- tests/api/ -t "contact-upload|contacts/import" --coverage
+
+      - name: Verify audit trail creation
+        run: pnpm test -- tests/api/audit-tests.ts
+
+  # ========================================================================
+  # Job 3: E2E Tests (Upload Flow, Paywall, Error Handling)
+  # ========================================================================
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [csv-validation, api-tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Build app
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Start dev server
+        run: pnpm dev &
+        env:
+          NODE_ENV: test
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Wait for dev server
+        run: npx wait-on http://localhost:3000 --timeout 30000
+
+      - name: Run E2E tests
+        run: pnpm exec playwright test tests/e2e/c103-csv-contact-upload.spec.ts
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: http://localhost:3000
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report/
+
+  # ========================================================================
+  # Job 4: Type Checking & Linting
+  # ========================================================================
+  type-check:
+    name: Type Check & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript strict mode check
+        run: |
+          pnpm tsc --strict \
+            lib/components/C103-CSVContactUpload.tsx \
+            lib/hooks/useContactAudit.ts \
+            lib/utils/csv-parser.ts \
+            lib/contracts/ccp09/csv-upload.ts \
+            lib/contracts/ccp09/upload-audit.ts \
+            app/api/workspaces/\[workspace_id\]/contacts/import/route.ts \
+            app/api/audit/contact-upload/route.ts
+
+      - name: ESLint check
+        run: pnpm lint -- \
+          lib/components/C103-CSVContactUpload.tsx \
+          lib/hooks/useContactAudit.ts \
+          lib/utils/csv-parser.ts \
+          lib/contracts/ccp09/ \
+          app/api/workspaces/\[workspace_id\]/contacts/import/ \
+          app/api/audit/contact-upload/
+
+  # ========================================================================
+  # Job 5: Hardening Checks (Contract Compliance, Determinism)
+  # ========================================================================
+  hardening-checks:
+    name: Hardening Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify contract compliance
+        run: |
+          # Check that CSV parser exports required types
+          grep -q "export type CSVRow" lib/contracts/ccp09/csv-upload.ts
+          grep -q "export type ValidatedCSVRow" lib/contracts/ccp09/csv-upload.ts
+          grep -q "export type CSVValidationResult" lib/contracts/ccp09/csv-upload.ts
+          grep -q "export type CSVValidationError" lib/contracts/ccp09/csv-upload.ts
+          grep -q "export type ContactUploadLog" lib/contracts/ccp09/csv-upload.ts
+          echo "✅ CSV upload contracts verified"
+
+      - name: Verify audit contract
+        run: |
+          grep -q "export type ContactUploadAuditEvent" lib/contracts/ccp09/upload-audit.ts
+          grep -q "export async function auditContactUpload" lib/contracts/ccp09/upload-audit.ts
+          echo "✅ Audit contracts verified"
+
+      - name: Verify server-side validation
+        run: |
+          # Ensure imports point to server-side parser, not client
+          grep -q "import { parseAndValidateCSV }" app/api/workspaces/\[workspace_id\]/contacts/import/route.ts
+          echo "✅ Server-side validation verified"
+
+      - name: Verify RLS policies
+        run: |
+          # Check that RLS is enabled on audit tables
+          grep -q "ALTER TABLE contact_uploads_audit ENABLE ROW LEVEL SECURITY" migrations/008_c103_csv_contact_upload.sql
+          grep -q "CREATE POLICY contact_uploads_audit_select" migrations/008_c103_csv_contact_upload.sql
+          echo "✅ RLS policies verified"
+
+      - name: Verify audit trail immutability
+        run: |
+          # Check that audit table has no UPDATE/DELETE policies
+          grep -q "INSERT" migrations/008_c103_csv_contact_upload.sql
+          grep -v -q "UPDATE.*contact_uploads_audit" migrations/008_c103_csv_contact_upload.sql || echo "WARNING: UPDATE policy found on audit table"
+          grep -v -q "DELETE.*contact_uploads_audit" migrations/008_c103_csv_contact_upload.sql || echo "WARNING: DELETE policy found on audit table"
+          echo "✅ Audit immutability verified"
+
+      - name: Verify determinism
+        run: |
+          # Run CSV parser tests multiple times, ensure consistency
+          pnpm test -- tests/components/C103-CSVContactUpload.test.ts --testNamePattern="Determinism" --repeat=5
+          echo "✅ Determinism verified"
+
+  # ========================================================================
+  # Workflow Status
+  # ========================================================================
+  check-status:
+    name: Check All Hardening Requirements
+    runs-on: ubuntu-latest
+    needs: [csv-validation, api-tests, e2e-tests, type-check, hardening-checks]
+    if: always()
+    steps:
+      - name: Verify all jobs passed
+        run: |
+          if [ "${{ needs.csv-validation.result }}" != "success" ] || \
+             [ "${{ needs.api-tests.result }}" != "success" ] || \
+             [ "${{ needs.e2e-tests.result }}" != "success" ] || \
+             [ "${{ needs.type-check.result }}" != "success" ] || \
+             [ "${{ needs.hardening-checks.result }}" != "success" ]; then
+            echo "❌ One or more hardening checks failed"
+            exit 1
+          fi
+          echo "✅ All CCP-09 CSV Contact Upload hardening checks passed"

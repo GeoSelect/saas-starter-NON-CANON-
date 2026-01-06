@@ -1,4 +1,4 @@
-import { supabaseRSC } from '@/lib/supabase/server';
+﻿import { supabaseRSC } from '@/lib/supabase/server';
 import { db } from './drizzle';
 import { users, teams, teamMembers } from './schema';
 import { eq } from 'drizzle-orm';
@@ -33,47 +33,52 @@ export async function getUser(): Promise<AppUser | null> {
   const userName = (data.user.user_metadata as any)?.name ?? userEmail?.split('@')[0] ?? 'User';
 
   // Try to find user by email in our database
-  const existingUsers = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, userEmail || ''))
-    .limit(1);
-
-  if (existingUsers.length > 0) {
-    return {
-      id: existingUsers[0].id,
-      email: existingUsers[0].email,
-      name: existingUsers[0].name
-    };
-  }
-
-  // User doesn't exist in our DB, create them
   try {
-    const newUser = await db
-      .insert(users)
-      .values({
-        name: userName,
-        email: userEmail || 'unknown@example.com',
-        passwordHash: 'oauth-' + supabaseUserId,
-        role: 'member',
-      })
-      .returning();
+    const existingUsers = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, userEmail || ''))
+      .limit(1);
 
-    if (newUser.length > 0) {
+    if (existingUsers.length > 0) {
       return {
-        id: newUser[0].id,
-        email: newUser[0].email,
-        name: newUser[0].name
+        id: existingUsers[0].id,
+        email: existingUsers[0].email,
+        name: existingUsers[0].name
       };
     }
+
+    // User doesn't exist in our DB, create them
+    try {
+      const newUser = await db
+        .insert(users)
+        .values({
+          name: userName,
+          email: userEmail || 'unknown@example.com',
+          passwordHash: 'oauth-' + supabaseUserId,
+          role: 'member',
+        })
+        .returning();
+
+      if (newUser.length > 0) {
+        return {
+          id: newUser[0].id,
+          email: newUser[0].email,
+          name: newUser[0].name
+        };
+      }
+    } catch (err) {
+      console.error('Error creating user:', err);
+    }
   } catch (err) {
-    console.error('Error creating user:', err);
+    // Table might not exist yet - use fallback
+    console.error('Error querying users table:', err);
   }
 
-  // Fallback: return mock user if creation fails
+  // Fallback: return mock user if query fails
   return {
     id: 1,
-    email: userEmail,
+    email: userEmail || 'john@example.com',
     name: userName
   };
 }

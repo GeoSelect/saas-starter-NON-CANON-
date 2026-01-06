@@ -1,11 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Header } from '@/components/Header';
 import { AuthProvider } from '@/lib/context/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { MapPin, Phone, Mail, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
 export default function SearchViewPage() {
@@ -68,18 +68,18 @@ function SearchViewPageContent() {
           <div className="bg-white border border-gray-200 rounded-lg p-4">
             <h3 className="font-semibold text-gray-900 mb-4">Street View Controls</h3>
             <div className="grid grid-cols-4 gap-3">
-              <button className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium">
+              <Link href="/search/view?view=north" className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium text-center">
                 North
-              </button>
-              <button className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium">
+              </Link>
+              <Link href="/search/view?view=east" className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium text-center">
                 East
-              </button>
-              <button className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium">
+              </Link>
+              <Link href="/search/view?view=south" className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium text-center">
                 South
-              </button>
-              <button className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium">
+              </Link>
+              <Link href="/search/view?view=west" className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium text-center">
                 West
-              </button>
+              </Link>
             </div>
             <p className="text-xs text-gray-500 mt-4">
               Rotate and pan the street view to explore the property from all angles. Zoom in/out to see details.
