@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
-
-// E.164 phone number format validation (e.g., +1234567890)
-function isValidPhoneNumber(phone: string): boolean {
-  // E.164 format: + followed by 1-15 digits
-  const e164Regex = /^\+[1-9]\d{1,14}$/;
-  return e164Regex.test(phone);
-}
+import { isValidPhoneNumber } from '@/lib/validation/phone';
 
 export async function POST(request: Request) {
   try {

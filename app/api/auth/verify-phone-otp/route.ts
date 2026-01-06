@@ -1,17 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
-
-// E.164 phone number format validation
-function isValidPhoneNumber(phone: string): boolean {
-  const e164Regex = /^\+[1-9]\d{1,14}$/;
-  return e164Regex.test(phone);
-}
-
-// Validate 6-digit OTP token
-function isValidToken(token: string): boolean {
-  const tokenRegex = /^\d{6}$/;
-  return tokenRegex.test(token);
-}
+import { isValidPhoneNumber, isValidOtpToken } from '@/lib/validation/phone';
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +20,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!isValidToken(token)) {
+    if (!isValidOtpToken(token)) {
       return NextResponse.json(
         { ok: false, error: 'Invalid token format. Token must be 6 digits.' },
         { status: 400 }

@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { GeoLocationButton } from '@/components/ui/GeoLocationButton';
 import { supabaseBrowser } from '@/lib/supabase/client';
 
 type AuthMethod = 'email' | 'phone';
 
 export default function SignInPage() {
+  const router = useRouter();
   const [authMethod, setAuthMethod] = useState<AuthMethod>('email');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -79,7 +81,7 @@ export default function SignInPage() {
 
       setStatus('Success! Redirecting...');
       // Redirect to home page after successful authentication
-      window.location.href = '/';
+      router.push('/');
     } catch (error) {
       setStatus('Error: Failed to verify code. Please try again.');
     }
