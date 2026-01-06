@@ -52,6 +52,16 @@ jobs:
             exit 1
           }
           echo "✅ CCP-04 Sentinel passed"
+
+      - name: '🚩 CCP-06 Sentinel: Branded Reports'
+        run: |
+          echo "🚩 Running CCP-06 Sentinel Test..."
+          pnpm test -- ccp06.integration.test || {
+            echo "FAILED: CCP-06 Contract violated!"
+            echo "Branded reports workspace isolation or schema has changed"
+            exit 1
+          }
+          echo "✅ CCP-06 Sentinel passed"
       
       # ============================================
       # CCP-03 Gates: Report Creation Integrity
@@ -194,6 +204,7 @@ jobs:
           echo "🚩 SENTINEL TESTS (Red Line Detection)"
           echo "  ✅ CCP-03: Report creation contract intact"
           echo "  ✅ CCP-04: Snapshot immutability verified"
+echo "  ✅ CCP-06: Branded reports workspace isolation verified"
           echo ""
           echo "CCP-03: Report Creation Integrity"
           echo "  ✅ Gate 1: Contract tests pass"
@@ -256,3 +267,5 @@ jobs:
         run: pnpm build
         env:
           SKIP_ENV_VALIDATION: true
+
+
