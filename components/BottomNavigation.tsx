@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, MessageCircle, FileText } from 'lucide-react';
+import { Home, MessageCircle, FileText, Shield, Settings } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 
 export function BottomNavigation() {
@@ -25,6 +25,18 @@ export function BottomNavigation() {
       icon: FileText,
       label: 'Details',
       href: '/details?demo=authenticated',
+    },
+    {
+      id: 'audit',
+      icon: Shield,
+      label: 'Audit',
+      href: '/audit',
+    },
+    {
+      id: 'settings',
+      icon: Settings,
+      label: 'Settings',
+      href: '/settings',
     },
   ];
 

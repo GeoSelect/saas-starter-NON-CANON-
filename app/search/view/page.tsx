@@ -7,6 +7,7 @@ import { AuthProvider } from '@/lib/context/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { MapPin, Phone, Mail, ArrowLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useGoogleGeocoding } from '@/lib/hooks/useGoogleMaps';
 
 export default function SearchViewPage() {
   return (
@@ -20,14 +21,31 @@ function SearchViewPageContent() {
   const searchParams = useSearchParams();
   const address = searchParams.get('address') || '123 Mountain View Road, Telluride, CO 81435';
   const [streetViewUrl, setStreetViewUrl] = useState('');
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const geocoding = useGoogleGeocoding();
 
+  // Geocode the address to get coordinates for Street View
   useEffect(() => {
-    // Mock Google Street View embed URL
-    const mockStreetViewUrl = `https://www.google.com/maps/embed?pb=!4v1704570000000!6m8!1m7!1s${encodeURIComponent(
-      'street_view_' + address
-    )}!2m2!1d37.9377!2d-106.9167!3f0!4f0!5f0.7820865974627469`;
-    setStreetViewUrl(mockStreetViewUrl);
-  }, [address]);
+    const initializeStreetView = async () => {
+      try {
+        const result = await geocoding.geocode(address);
+        if (result && result.location) {
+          setLocation(result.location);
+          
+          // Create Google Street View API URL with real coordinates
+          const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+          const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${result.location.lat},${result.location.lng}&key=${apiKey}`;
+          setStreetViewUrl(streetViewUrl);
+        }
+      } catch (error) {
+        console.error('Failed to geocode address:', error);
+      }
+    };
+
+    if (address) {
+      initializeStreetView();
+    }
+  }, [address, geocoding]);
 
   return (
     <main className="pb-24">
@@ -53,38 +71,49 @@ function SearchViewPageContent() {
       <div className="grid md:grid-cols-3 gap-8 mb-8">
         {/* Street View Section */}
         <div className="md:col-span-2">
-          <div className="bg-gray-200 rounded-lg overflow-hidden h-96 mb-6 flex items-center justify-center relative">
-            {/* Mock Street View Placeholder */}
-            <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex flex-col items-center justify-center text-white">
-              <div className="text-6xl mb-4">📸</div>
-              <h3 className="text-xl font-semibold mb-2">Google Street View</h3>
-              <p className="text-blue-100 text-center max-w-xs">
-                Street-level imagery from Google Maps for {address}
-              </p>
-            </div>
+          <div className="bg-gray-200 rounded-lg overflow-hidden h-96 mb-6 relative">
+            {streetViewUrl ? (
+              <iframe
+                src={streetViewUrl}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            ) : (
+              // Loading placeholder
+              <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex flex-col items-center justify-center text-white">
+                <div className="animate-spin mb-4">📍</div>
+                <h3 className="text-xl font-semibold mb-2">Loading Map...</h3>
+                <p className="text-blue-100 text-center max-w-xs">
+                  Getting location data for {address}
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Street View Controls */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-900 mb-4">Street View Controls</h3>
-            <div className="grid grid-cols-4 gap-3">
-              <Link href="/search/view?view=north" className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium text-center">
-                North
-              </Link>
-              <Link href="/search/view?view=east" className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium text-center">
-                East
-              </Link>
-              <Link href="/search/view?view=south" className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium text-center">
-                South
-              </Link>
-              <Link href="/search/view?view=west" className="px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors text-sm font-medium text-center">
-                West
-              </Link>
+          {/* Location Info */}
+          {location && (
+            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-600 mb-2">Coordinates</p>
+              <p className="font-mono text-gray-900">
+                {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+              </p>
             </div>
-            <p className="text-xs text-gray-500 mt-4">
-              Rotate and pan the street view to explore the property from all angles. Zoom in/out to see details.
-            </p>
-          </div>
+          )}
+
+          {/* Geocoding Error */}
+          {geocoding.error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-600 text-sm font-medium">Error loading map</p>
+              <p className="text-red-500 text-sm">{geocoding.error}</p>
+              <p className="text-red-500 text-xs mt-2">
+                Check your Google Maps API key configuration in .env.local
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Summary Section */}

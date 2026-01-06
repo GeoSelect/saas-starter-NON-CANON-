@@ -1,30 +1,28 @@
 'use client';
 
-import { useContext } from 'react';
-import { AuthContext, PLAN_NAMES } from '@/lib/context/AuthContext';
-import { PublicNavigation } from '@/components/PublicNavigation';
+import Link from 'next/link';
+import { Home } from 'lucide-react';
 
 export function Header() {
-  const authContext = useContext(AuthContext);
-
-  // Handle case where Header is used outside AuthProvider
-  const currentPlan = authContext?.currentPlan ?? null;
-  const isLoggedIn = authContext?.isLoggedIn ?? false;
-  const logout = authContext?.logout ?? (() => {});
-
-  const currentUser = isLoggedIn && currentPlan
-    ? {
-        name: 'User',
-        plan: PLAN_NAMES[currentPlan],
-      }
-    : undefined;
-
   return (
-    <PublicNavigation
-      isDashboard={true}
-      isAuthenticated={isLoggedIn}
-      currentUser={currentUser}
-      onLogout={logout}
-    />
+    <header className="bg-white border-b border-gray-200 py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <h1 className="text-2xl font-bold text-gray-900">
+              <span className="text-orange-500">GeoSelect</span>.It
+            </h1>
+          </Link>
+          <Link
+            href="/"
+            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-orange-500 transition-colors duration-200 rounded-lg hover:bg-orange-50"
+            aria-label="Go to home"
+          >
+            <Home className="w-5 h-5" />
+            <span className="hidden sm:inline text-sm font-medium">Home</span>
+          </Link>
+        </div>
+      </div>
+    </header>
   );
 }

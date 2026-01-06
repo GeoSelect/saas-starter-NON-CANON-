@@ -31,6 +31,32 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
  * - Only use in server-side code (server components, API routes, etc.)
  * - SERVICE_ROLE_KEY is sensitive and must remain private
  */
+
+// Suppress Supabase auth warnings in console
+const originalWarn = console.warn;
+const originalError = console.error;
+
+const suppressedPatterns = [
+  'AuthSessionMissingError',
+  'Auth session missing',
+];
+
+const createFilteredLogger = (originalLogger: typeof console.warn) => {
+  return (...args: any[]) => {
+    const message = args.map(arg => String(arg)).join(' ');
+    if (suppressedPatterns.some(pattern => message.includes(pattern))) {
+      return; // Suppress
+    }
+    originalLogger(...args);
+  };
+};
+
+if (typeof window === 'undefined') {
+  // Only in server environment
+  console.warn = createFilteredLogger(originalWarn);
+  console.error = createFilteredLogger(originalError);
+}
+
 export const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,

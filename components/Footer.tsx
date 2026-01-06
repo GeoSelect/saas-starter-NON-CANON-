@@ -26,8 +26,8 @@ export function Footer() {
         ],
         Resources: [
           { label: 'Explore', href: '/search' },
-          { label: 'Documentation', href: '/' },
-          { label: 'Support', href: '/' },
+          { label: 'Audit Demo', href: '/audit-demo' },
+          { label: 'Demo', href: '/preview/components' },
         ],
       };
     }
@@ -42,6 +42,7 @@ export function Footer() {
         ],
         Account: [
           { label: 'Chat', href: '/chat' },
+          { label: 'Audit Trail', href: '/audit' },
           { label: 'Settings', href: '/settings' },
           { label: 'Sign Out', href: '/' },
         ],
@@ -111,12 +112,12 @@ export function Footer() {
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
                 {category}
               </h3>
-              <ul className="space-y-2">
+              <ul className="space-y-2 pl-4">
                 {links.map((link: FooterLink) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-xs text-white underline hover:text-orange-400 transition-colors duration-200"
+                      className="text-xs text-white hover:text-orange-400 transition-colors duration-200"
                     >
                       {link.label}
                     </Link>
@@ -140,13 +141,13 @@ export function Footer() {
           <div className="flex gap-6">
             <Link
               href="/"
-              className="text-xs text-white underline hover:text-orange-400 transition-colors duration-200"
+              className="text-xs text-white hover:text-orange-400 transition-colors duration-200"
             >
               Privacy Policy
             </Link>
             <Link
               href="/"
-              className="text-xs text-white underline hover:text-orange-400 transition-colors duration-200"
+              className="text-xs text-white hover:text-orange-400 transition-colors duration-200"
             >
               Terms of Service
             </Link>
