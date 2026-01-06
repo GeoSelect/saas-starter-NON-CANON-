@@ -5,86 +5,111 @@
  *
  * Searches for parcel data by address, parcel ID, or coordinates
  * Requires can_resolve_parcels entitlement
+ * Uses mock data from lib/mock-data/parcels.ts
  */
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { requireEntitlement, unauthorizedResponse, forbiddenResponse } from "@/lib/auth/middleware";
+import { requireEntitlement, forbiddenResponse } from "@/lib/auth/middleware";
 import { SearchParcelRequest, ParcelSearchResponse } from "@/lib/types/parcel";
+import {
+  searchMockParcelsByAddress,
+  getMockParcelByApn,
+  getMockParcelsNearCoordinates,
+} from "@/lib/mock-data/parcels";
 
 /**
- * Mock parcel data source (replace with real API integration)
+ * Resolve parcel from mock data sources
  * In production, this would call county assessor APIs, Zillow, Google Maps, etc.
  */
 async function resolveParcelFromSources(
   request: SearchParcelRequest
 ): Promise<ParcelSearchResponse> {
   try {
-    // TODO: Integrate with real parcel data sources
-    // - County Assessor APIs
-    // - Google Maps Geocoding
-    // - Zillow API
-    // - ArcGIS
+    let parcel = null;
 
-    // For now, return mock data for demonstration
+    // Search by address
+    if (request.address) {
+      const results = searchMockParcelsByAddress(request.address);
+      parcel = results[0];
+    }
+
+    // Search by parcel ID / APN
+    if (!parcel && request.parcel_id) {
+      parcel = getMockParcelByApn(request.parcel_id);
+    }
+
+    // Search by coordinates
+    if (!parcel && request.latitude && request.longitude) {
+      const results = getMockParcelsNearCoordinates(
+        request.latitude,
+        request.longitude,
+        1
+      );
+      parcel = results[0];
+    }
+
+    if (!parcel) {
+      return {
+        success: false,
+        error: {
+          code: "PARCEL_NOT_FOUND",
+          message: "No parcel found matching the provided criteria",
+        },
+      };
+    }
+
     const mockParcel = {
-      parcel_id: "mock-123456",
-      county: "San Miguel",
-      state: "CO",
+      parcel_id: parcel.parcelId,
+      county: parcel.county,
+      state: parcel.state,
       address: {
-        street: request.address || "123 Mountain View Dr",
-        city: "Telluride",
-        state: "CO",
-        zip: "81435",
-        county: "San Miguel",
+        street: parcel.address,
+        city: parcel.address.split(",")[1]?.trim() || "Unknown",
+        state: parcel.state,
+        zip: "",
+        county: parcel.county,
       },
       coordinates: {
-        latitude: request.latitude || 37.9355,
-        longitude: request.longitude || -106.9422,
+        latitude: parcel.latitude,
+        longitude: parcel.longitude,
       },
       owner: {
-        name: "Sample Owner LLC",
-        type: "corporation" as const,
-        address: "PO Box 123, Telluride, CO 81435",
+        name: parcel.owner.name,
+        type: parcel.owner.type,
+        address: `${parcel.owner.email || parcel.owner.phone || "N/A"}`,
       },
       property_info: {
-        lot_size_sqft: 45000,
-        building_sqft: 5200,
-        year_built: 1995,
-        stories: 2,
-        bedrooms: 4,
-        bathrooms: 3,
-        garage_type: "attached",
-        pool: true,
+        lot_size_sqft: parcel.propertyInfo.lotSizeSqft,
+        building_sqft: parcel.propertyInfo.buildingSqft,
+        year_built: parcel.propertyInfo.yearBuilt,
+        stories: 1,
+        bedrooms: parcel.propertyInfo.bedrooms,
+        bathrooms: parcel.propertyInfo.bathrooms,
+        garage_type: "unknown",
+        pool: parcel.propertyInfo.pool,
       },
       valuation: {
-        estimated_value: 2500000,
-        last_sale_price: 2300000,
-        last_sale_date: "2022-06-15",
-        tax_assessed_value: 1850000,
+        estimated_value: parcel.valuation.estimatedValue,
+        last_sale_price: parcel.valuation.lastSalePrice,
+        last_sale_date: parcel.valuation.lastSaleDate,
+        tax_assessed_value: parcel.valuation.taxAssessedValue,
       },
       zoning: {
-        code: "RES-2",
-        description: "Residential Zone 2",
-        use_type: "Single Family Residence",
+        code: parcel.zoning,
+        description: `Zoning: ${parcel.zoning}`,
+        use_type: parcel.propertyInfo.propertyType,
       },
-      sources: [
-        {
-          name: "County Assessor",
-          confidence: "high" as const,
-          last_updated: new Date().toISOString(),
-        },
-        {
-          name: "Google Maps",
-          confidence: "high" as const,
-          last_updated: new Date().toISOString(),
-        },
-      ],
+      sources: parcel.sources.map((src) => ({
+        name: src.name,
+        confidence: src.confidence,
+        last_updated: new Date().toISOString(),
+      })),
       metadata: {
         resolved_at: new Date().toISOString(),
-        display_address: "123 Mountain View Dr, Telluride, CO 81435",
-        summary: "4BR/3BA residential property in Telluride with pool",
+        display_address: parcel.address,
+        summary: `${parcel.propertyInfo.bedrooms}BR/${parcel.propertyInfo.bathrooms}BA property in ${parcel.county} County`,
       },
     };
 
@@ -106,16 +131,15 @@ async function resolveParcelFromSources(
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    // Check authentication and entitlement
     const auth = await requireEntitlement(request, "can_resolve_parcels");
     if (!auth) {
-      return forbiddenResponse("User does not have permission to resolve parcels");
+      return forbiddenResponse(
+        "User does not have permission to resolve parcels"
+      );
     }
 
-    // Parse request
     const body = (await request.json()) as SearchParcelRequest;
 
-    // Validate input
     if (!body.address && !body.parcel_id && (!body.latitude || !body.longitude)) {
       return NextResponse.json(
         {
@@ -129,7 +153,6 @@ export async function POST(request: NextRequest): Promise<Response> {
       );
     }
 
-    // Log search activity
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -158,19 +181,24 @@ export async function POST(request: NextRequest): Promise<Response> {
       activity_type: "parcel_searched",
       resource_type: "parcel",
       metadata: {
-        search_type: body.address ? "address" : body.parcel_id ? "parcel_id" : "coordinates",
-        search_input: body.address || body.parcel_id || `${body.latitude},${body.longitude}`,
+        search_type: body.address
+          ? "address"
+          : body.parcel_id
+            ? "parcel_id"
+            : "coordinates",
+        search_input:
+          body.address ||
+          body.parcel_id ||
+          `${body.latitude},${body.longitude}`,
       },
     });
 
-    // Resolve parcel from external sources
     const result = await resolveParcelFromSources(body);
 
     if (!result.success) {
       return NextResponse.json(result as ParcelSearchResponse, { status: 500 });
     }
 
-    // Log successful resolution
     if (result.data) {
       await supabase.from("user_activity").insert({
         user_id: auth.userId,
