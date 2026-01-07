@@ -128,7 +128,7 @@ jobs:
           retention-days: 30
 
       - name: Notify Slack on Failure
-        if: failure()
+        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1
         with:
           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}

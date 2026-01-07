@@ -15,12 +15,10 @@ export interface HealthStatus {
     database: {
       status: 'connected' | 'disconnected';
       latency?: number;
-      error?: string;
     };
     secrets: {
       status: 'accessible' | 'inaccessible';
       backend: 'aws-secrets' | 'unknown';
-      error?: string;
     };
     memory: {
       status: 'healthy' | 'warning' | 'critical';
@@ -31,7 +29,6 @@ export interface HealthStatus {
     audit: {
       status: 'operational' | 'degraded' | 'offline';
       eventsProcessed: number;
-      error?: string;
     };
   };
   version: string;
@@ -55,33 +52,43 @@ class HealthChecker {
         latency,
       };
     } catch (error) {
+      // Do NOT leak error details (could expose connection strings, IPs, etc.)
       return {
         status: 'disconnected',
-        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
 
   async checkSecrets(): Promise<HealthStatus['checks']['secrets']> {
     try {
-      // Check if secrets backend is accessible
+      // Check if secrets backend is configured
       const backend = process.env.SECRETS_BACKEND || 'aws-secrets';
 
+      // IMPORTANT: Do NOT make real AWS API calls on every health check
+      // That would cause: slow responses (100-500ms), rate limiting, and extra costs
+      // Instead, verify configuration only:
+      
       switch (backend) {
         case 'aws-secrets':
-          // TODO: Implement AWS Secrets Manager availability check
-          // const secretsClient = new SecretsManagerClient({...});
-          // await secretsClient.send(new DescribeSecretCommand({...}));
-          return { status: 'accessible', backend: 'aws-secrets' };
+          // Just check that credentials are configured
+          // Actual AWS connectivity tested separately (e.g., during startup)
+          const hasAwsConfig = !!(
+            process.env.AWS_REGION &&
+            (process.env.AWS_ACCESS_KEY_ID || process.env.AWS_ROLE_ARN)
+          );
+          return { 
+            status: hasAwsConfig ? 'accessible' : 'inaccessible', 
+            backend: 'aws-secrets' 
+          };
 
         default:
           return { status: 'inaccessible', backend: 'unknown' };
       }
     } catch (error) {
+      // Do NOT leak error details
       return {
         status: 'inaccessible',
         backend: 'aws-secrets',
-        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -117,10 +124,10 @@ class HealthChecker {
         eventsProcessed: 0, // TODO: get from database
       };
     } catch (error) {
+      // Do NOT leak error details
       return {
         status: 'offline',
         eventsProcessed: 0,
-        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }

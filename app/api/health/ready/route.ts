@@ -31,13 +31,22 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    // Log internally, don't expose details
     console.error('[Readiness Check] Fatal error:', error);
     
     return NextResponse.json(
       {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
-        error: 'Readiness check system unavailable',
+        checks: {
+          database: { status: 'disconnected' },
+          secrets: { status: 'inaccessible', backend: 'unknown' },
+          memory: { status: 'critical', heapUsed: 0, heapTotal: 0, external: 0 },
+          audit: { status: 'offline', eventsProcessed: 0 },
+        },
+        version: process.env.APP_VERSION || '1.0.0',
+        environment: (process.env.NODE_ENV as any) || 'local',
+        uptime: 0,
       },
       { status: 503 }
     );
