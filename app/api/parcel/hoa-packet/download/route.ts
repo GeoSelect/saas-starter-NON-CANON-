@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { recordHoaPacketDownload } from '@/lib/hoa-packet';
+import { assertHoaPacketAccess, recordHoaPacketDownload } from '@/lib/hoa-packet';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 /**
+ * GET /api/parcel/hoa-packet/download?session_id=cs_test_...
+ * 
  * Download HOA Packet PDF
+ * 
+ * Access control:
+ * - Calls assertHoaPacketAccess() to enforce permissions
+ * - Throws if user has no access or entitlement is revoked
+ * 
  * In production, this would:
  * 1. Generate a PDF with HOA documents
  * 2. Include property data from Esri
@@ -14,17 +21,17 @@ import { cookies } from 'next/headers';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const sessionId = searchParams.get('sessionId');
-    const parcelId = searchParams.get('parcelId');
+    const sessionId = searchParams.get('session_id');
 
-    if (!sessionId || !parcelId) {
+    if (!sessionId) {
       return NextResponse.json(
-        { error: 'Missing sessionId or parcelId' },
+        { error: 'Missing sessionId parameter' },
         { status: 400 }
       );
     }
 
-    // Verify purchase exists and is completed
+    // === Get current user ===
+    let userId: string | null = null;
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -47,26 +54,61 @@ export async function GET(req: NextRequest) {
       }
     );
 
-    const { data: purchase, error } = await supabase
+    try {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
+        userId = data.user.id;
+      }
+    } catch (err) {
+      // Not authenticated
+    }
+
+    // === Query purchase to get parcel_id ===
+    const { data: purchase, error: purchaseError } = await supabase
       .from('hoa_packet_purchases')
-      .select('*')
+      .select('id, parcel_ref')
       .eq('stripe_session_id', sessionId)
-      .eq('parcel_id', parcelId)
-      .eq('status', 'completed')
       .single();
 
-    if (error || !purchase) {
+    if (purchaseError || !purchase) {
       return NextResponse.json(
-        { error: 'Purchase not found or not completed' },
+        { error: 'Purchase not found' },
         { status: 404 }
       );
     }
 
-    // Record download event
+    // === Extract parcel_id from normalized parcel_ref ===
+    // parcel_ref format: "parcel:40023" or "apn:123|jur:TX"
+    let parcelId = '';
+    if (purchase.parcel_ref.startsWith('parcel:')) {
+      parcelId = purchase.parcel_ref.replace('parcel:', '');
+    } else if (purchase.parcel_ref.startsWith('apn:')) {
+      // For apn format, use as-is for now
+      // In production, would need to resolve to parcel_id
+      parcelId = purchase.parcel_ref;
+    }
+
+    // === ENFORCE ACCESS CONTROL ===
+    // This throws if access is denied
+    try {
+      await assertHoaPacketAccess({
+        user_id: userId,
+        parcel_id: parcelId,
+      });
+    } catch (accessError) {
+      const message = accessError instanceof Error ? accessError.message : 'Access denied';
+      console.warn(`[/download] Access denied for ${userId || 'guest'}: ${message}`);
+      return NextResponse.json(
+        { error: message },
+        { status: 403 }
+      );
+    }
+
+    // === Record download event ===
     await recordHoaPacketDownload(purchase.id);
 
-    // TODO: In production, generate actual PDF
-    // For now, return mock PDF content
+    // === Generate mock PDF for development ===
+    // TODO: In production, generate actual PDF from Esri data + templates
     const mockPdfContent = Buffer.from(
       `%PDF-1.4
 1 0 obj
@@ -87,9 +129,7 @@ BT
 (HOA PACKET REPORT) Tj
 0 -50 Td
 /F1 12 Tf
-(Property: ${purchase.property_address}) Tj
-0 -20 Td
-(Parcel ID: ${purchase.parcel_id}) Tj
+(Property: ${parcelId}) Tj
 0 -20 Td
 (Downloaded: ${new Date().toLocaleDateString()}) Tj
 0 -40 Td
@@ -126,6 +166,10 @@ startxref
       'utf-8'
     );
 
+    console.log(
+      `[/download] ✓ Downloaded packet for parcel ${parcelId} (user: ${userId || 'guest'})`
+    );
+
     return new NextResponse(mockPdfContent, {
       headers: {
         'Content-Type': 'application/pdf',
@@ -134,11 +178,11 @@ startxref
       },
     });
   } catch (error) {
-    console.error('Download error:', error);
+    const message = error instanceof Error ? error.message : 'Download failed';
+    console.error('[/download] Error:', message);
+
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Download failed',
-      },
+      { error: message },
       { status: 500 }
     );
   }
