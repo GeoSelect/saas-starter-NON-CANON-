@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home } from 'lucide-react';
+import { Home, MapPin } from 'lucide-react';
 
 export function Header() {
   return (
@@ -9,6 +9,7 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <MapPin className="w-6 h-6 text-orange-500" />
             <h1 className="text-2xl font-bold text-gray-900">
               <span className="text-orange-500">GeoSelect</span>.It
             </h1>

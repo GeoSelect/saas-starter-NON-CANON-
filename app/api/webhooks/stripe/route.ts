@@ -144,6 +144,160 @@ async function handleSubscriptionDeleted(
 }
 
 /**
+ * Handle checkout.session.completed event
+ * Processes HOA packet purchases and upgrades users to basic_buyer
+ */
+async function handleCheckoutSessionCompleted(
+  session: Stripe.Checkout.Session,
+  supabase: ReturnType<typeof createServerClient>
+) {
+  try {
+    const { parcelId, propertyAddress, propertyCity, propertyState, propertyZip } = session.metadata || {};
+    const customerEmail = session.customer_email;
+
+    if (!parcelId || !customerEmail) {
+      console.warn('[stripe-webhook] Missing parcelId or customerEmail in session metadata');
+      return;
+    }
+
+    // 1. Store transaction in database
+    const { data: purchase, error: purchaseError } = await supabase
+      .from('hoa_packet_purchases')
+      .insert([
+        {
+          parcel_id: parcelId,
+          stripe_session_id: session.id,
+          stripe_payment_intent_id: session.payment_intent,
+          amount_cents: session.amount_total,
+          currency: session.currency,
+          customer_email: customerEmail,
+          property_address: propertyAddress,
+          property_city: propertyCity,
+          property_state: propertyState,
+          property_zip: propertyZip,
+          status: 'completed',
+          metadata: { sessionId: session.id },
+        },
+      ])
+      .select()
+      .single();
+
+    if (purchaseError) {
+      console.error('[stripe-webhook] Failed to store purchase:', purchaseError);
+      return;
+    }
+
+    // 2. Find or create user with this email
+    let userId: string;
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', customerEmail)
+      .single();
+
+    if (existingUser) {
+      userId = existingUser.id;
+    } else {
+      // Create new user account (guest checkout)
+      const { data: newUser, error: createUserError } = await supabase
+        .from('users')
+        .insert([
+          {
+            email: customerEmail,
+            subscription_tier: 'basic_buyer',
+            role: 'user',
+            onboarding_completed: false,
+          },
+        ])
+        .select('id')
+        .single();
+
+      if (createUserError) {
+        console.error('[stripe-webhook] Failed to create user:', createUserError);
+        return;
+      }
+
+      userId = newUser.id;
+    }
+
+    // 3. Update user to basic_buyer if not already
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ subscription_tier: 'basic_buyer', updated_at: new Date().toISOString() })
+      .eq('id', userId);
+
+    if (updateError) {
+      console.error('[stripe-webhook] Failed to upgrade user:', updateError);
+      return;
+    }
+
+    // 4. Grant access to this parcel
+    const { error: accessError } = await supabase
+      .from('user_hoa_packet_access')
+      .upsert([
+        {
+          user_id: userId,
+          parcel_id: parcelId,
+          purchase_id: purchase.id,
+          access_level: 'full',
+        },
+      ]);
+
+    if (accessError) {
+      console.error('[stripe-webhook] Failed to grant access:', accessError);
+      return;
+    }
+
+    // 5. Update purchase with user_id
+    await supabase
+      .from('hoa_packet_purchases')
+      .update({ user_id: userId })
+      .eq('id', purchase.id);
+
+    console.log(`[stripe-webhook] ✓ HOA packet purchased: ${purchase.id} for user ${userId} (parcel: ${parcelId})`);
+  } catch (error) {
+    console.error('[stripe-webhook] Error handling checkout.session.completed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle charge.refunded event
+ * Marks purchase as refunded but keeps access (optional: revoke access)
+ */
+async function handleChargeRefunded(
+  charge: Stripe.Charge,
+  supabase: ReturnType<typeof createServerClient>
+) {
+  try {
+    const paymentIntentId = charge.payment_intent as string;
+
+    if (!paymentIntentId) {
+      console.warn('[stripe-webhook] Missing payment_intent in charge');
+      return;
+    }
+
+    const { error: refundError } = await supabase
+      .from('hoa_packet_purchases')
+      .update({
+        status: 'refunded',
+        refunded_at: new Date().toISOString(),
+      })
+      .eq('stripe_payment_intent_id', paymentIntentId);
+
+    if (refundError) {
+      console.error('[stripe-webhook] Failed to mark as refunded:', refundError);
+      return;
+    }
+
+    console.log(`[stripe-webhook] ✓ Purchase refunded for payment_intent: ${paymentIntentId}`);
+  } catch (error) {
+    console.error('[stripe-webhook] Error handling charge.refunded:', error);
+    throw error;
+  }
+}
+
+/**
  * POST /api/webhooks/stripe
  *
  * Stripe sends webhook events here
@@ -207,6 +361,14 @@ export async function POST(req: NextRequest) {
 
       case 'customer.subscription.deleted':
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription, supabase);
+        break;
+
+      case 'checkout.session.completed':
+        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session, supabase);
+        break;
+
+      case 'charge.refunded':
+        await handleChargeRefunded(event.data.object as Stripe.Charge, supabase);
         break;
 
       default:

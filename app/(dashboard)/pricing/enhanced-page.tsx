@@ -64,6 +64,29 @@ export default function EnhancedPricingPage() {
           </div>
         </div>
 
+        {/* Unlock Premium Features */}
+        <div className="max-w-3xl mx-auto mb-16">
+          <h2 className="text-3xl font-bold text-white mb-6 text-center">Unlock Premium Features</h2>
+          <ul className="space-y-3 text-gray-300">
+            <li className="flex items-start gap-3">
+              <Check className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
+              <span>Access advanced analytics and reporting tools to make data-driven decisions for your real estate portfolio</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <Check className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
+              <span>Scale your operations with unlimited users, higher API limits, and expanded storage capacity</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <Check className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
+              <span>Get priority support and dedicated account management to ensure your success</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <Check className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
+              <span>Integrate seamlessly with your existing tools and workflows using our comprehensive API</span>
+            </li>
+          </ul>
+        </div>
+
         {/* Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {plans.map(plan => {
