@@ -1,3 +1,4 @@
+
 import Stripe from 'stripe';
 import { redirect } from 'next/navigation';
 import { Team } from '@/lib/db/schema';
@@ -7,9 +8,31 @@ import {
   updateTeamSubscription
 } from '@/lib/db/queries';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-04-30.basil'
-});
+let stripe: Stripe | null = null;
+const STRIPE_KEY = process.env.STRIPE_SECRET_KEY;
+if (STRIPE_KEY) {
+  stripe = new Stripe(STRIPE_KEY, {
+    apiVersion: '2025-04-30.basil',
+  });
+} else {
+  if (process.env.NODE_ENV !== 'production') {
+    // Provide a mock for development to avoid crashes
+    stripe = {
+      checkout: {
+        sessions: {
+          create: async () => {
+            throw new Error('Stripe is not configured. Add STRIPE_SECRET_KEY to your .env.local for full functionality.');
+          },
+        },
+      },
+    } as any;
+    console.warn('[stripe] STRIPE_SECRET_KEY not set. Stripe is mocked.');
+  } else {
+    throw new Error('STRIPE_SECRET_KEY is required in production');
+  }
+}
+
+export { stripe };
 
 export async function createCheckoutSession({
   team,

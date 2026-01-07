@@ -328,7 +328,7 @@ export async function linkRuleToSource(
  */
 export async function getRuleSources(ruleId: string): Promise<
   (RuleSource & {
-    sources?: Source;
+    sources?: Source[];
   })[]
 > {
   const cookieStore = await cookies();
@@ -362,14 +362,24 @@ export async function getRuleSources(ruleId: string): Promise<
         name,
         type,
         url,
-        confidence_level
+        confidence_level,
+        created_at,
+        updated_at
       )
     `
     )
     .eq("rule_id", ruleId);
 
   if (error) throw error;
-  return data || [];
+  // Patch sources to include required fields for Source type
+  return (data || []).map((item: any) => ({
+    ...item,
+    sources: item.sources?.map((src: any) => ({
+      ...src,
+      created_at: src.created_at || '',
+      updated_at: src.updated_at || '',
+    }))
+  }));
 }
 
 // ============================================================================

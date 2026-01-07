@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { supabaseRoute } from '@/lib/supabase/server';
 
 export type ContactType = 'hoa_member' | 'homeowner' | 'external' | 'vendor';
 export type VerificationStatus = 'verified' | 'pending' | 'unverified';
@@ -50,7 +50,7 @@ export interface ContactGroup {
 // ========================================
 
 export async function searchContacts(params: ContactSearchParams) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   let query = supabase
     .from('contacts')
@@ -103,7 +103,7 @@ export async function searchContacts(params: ContactSearchParams) {
 // ========================================
 
 export async function getContact(contactId: string) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { data, error } = await supabase
     .from('contacts')
@@ -118,7 +118,7 @@ export async function getContact(contactId: string) {
 export async function createContact(
   contact: Omit<Contact, 'id' | 'created_at' | 'updated_at'>
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { data, error } = await supabase
     .from('contacts')
@@ -134,7 +134,7 @@ export async function updateContact(
   contactId: string,
   updates: Partial<Contact>
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { data, error } = await supabase
     .from('contacts')
@@ -148,7 +148,7 @@ export async function updateContact(
 }
 
 export async function deleteContact(contactId: string) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { error } = await supabase
     .from('contacts')
@@ -164,7 +164,7 @@ export async function deleteContact(contactId: string) {
 // ========================================
 
 export async function getContactGroups(workspaceId: string) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { data, error } = await supabase
     .from('contact_groups')
@@ -182,7 +182,7 @@ export async function getContactGroups(workspaceId: string) {
 }
 
 export async function getGroupContacts(groupId: string) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { data, error } = await supabase
     .from('contact_group_members')
@@ -195,7 +195,7 @@ export async function getGroupContacts(groupId: string) {
     .eq('group_id', groupId);
 
   if (error) throw error;
-  return data.map((item) => item.contacts) as Contact[];
+  return data.map((item: any) => item.contacts) as Contact[];
 }
 
 export async function addContactToGroup(
@@ -203,7 +203,7 @@ export async function addContactToGroup(
   groupId: string,
   addedBy: string
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { error } = await supabase
     .from('contact_group_members')
@@ -217,7 +217,7 @@ export async function removeContactFromGroup(
   contactId: string,
   groupId: string
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   const { error } = await supabase
     .from('contact_group_members')
@@ -238,7 +238,7 @@ export async function canShareWithContact(
   contactId: string,
   workspaceId: string
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   // Check explicit permission
   const { data: permission } = await supabase
@@ -268,7 +268,7 @@ export async function getShareableContacts(
   userId: string,
   workspaceId: string
 ) {
-  const supabase = await createClient();
+  const supabase = await supabaseRoute();
 
   // Get contacts user can share with
   const { data, error } = await supabase
@@ -290,8 +290,8 @@ export async function getShareableContacts(
 
   if (permissions && permissions.length > 0) {
     const deniedIds = permissions
-      .filter((p) => !p.can_share)
-      .map((p) => p.contact_id);
+      .filter((p: any) => !p.can_share)
+      .map((p: any) => p.contact_id);
     return (data as Contact[]).filter((c) => !deniedIds.includes(c.id));
   }
 

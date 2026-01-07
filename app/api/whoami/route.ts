@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase/server';
+import { supabaseRoute } from '@/lib/supabase/server';
 
 export async function GET() {
-  const supabase = await supabaseServer();
+  const supabase = await supabaseRoute();
   const { data, error } = await supabase.auth.getUser();
 
   if (error) {

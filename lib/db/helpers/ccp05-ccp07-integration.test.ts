@@ -253,7 +253,7 @@ describe("CCP-07 + CCP-05: Workspace Isolation", () => {
 
     it("should require setting active workspace before CCP-07 operations", () => {
       const user = { id: "user-1" };
-      const activeWorkspace = { user_id: user.id, workspace_id: null };
+      const activeWorkspace: { user_id: string; workspace_id: string | null } = { user_id: user.id, workspace_id: null };
 
       // Initially no active workspace
       expect(activeWorkspace.workspace_id).toBeNull();

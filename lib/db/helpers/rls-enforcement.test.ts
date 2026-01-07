@@ -59,7 +59,7 @@ describe("CCP-07 RLS: Sources Table", () => {
     });
 
     it("should prevent source creation by non-members", () => {
-      const userWorkspaces = [];
+      const userWorkspaces: string[] = [];
       const targetWorkspace = "ws-1";
 
       // User is not in targetWorkspace
@@ -363,7 +363,7 @@ describe("CCP-07 RLS: Cross-Workspace Isolation", () => {
   });
 
   it("should prevent reading rule sources from other workspaces", () => {
-    const rules = {
+    const rules: Record<string, { workspace_id: string }> = {
       "rule-1": { workspace_id: "ws-1" },
       "rule-2": { workspace_id: "ws-2" },
     };

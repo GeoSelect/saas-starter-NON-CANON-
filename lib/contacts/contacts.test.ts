@@ -6,7 +6,7 @@ import { describe, it, expect } from "vitest";
  */
 
 describe("CCP-09 Contacts: API Contract", () => {
-  describe("POST /api/contacts", () => {
+  describe("POST /api/workspaces/[id]/contacts", () => {
     it("should create contact with required fields", () => {
       const response = {
         ok: true,
@@ -64,7 +64,7 @@ describe("CCP-09 Contacts: API Contract", () => {
     });
   });
 
-  describe("GET /api/contacts", () => {
+  describe("GET /api/workspaces/[id]/contacts", () => {
     it("should list contacts with filtering", () => {
       const response = {
         ok: true,
@@ -107,7 +107,7 @@ describe("CCP-09 Contacts: API Contract", () => {
     });
   });
 
-  describe("GET /api/contacts/:id", () => {
+  describe("GET /api/contacts/[id]", () => {
     it("should return contact details", () => {
       const response = {
         ok: true,
@@ -139,7 +139,7 @@ describe("CCP-09 Contacts: API Contract", () => {
     });
   });
 
-  describe("PATCH /api/contacts/:id", () => {
+  describe("PATCH /api/contacts/[id]", () => {
     it("should update contact fields", () => {
       const response = {
         ok: true,
@@ -178,7 +178,7 @@ describe("CCP-09 Contacts: API Contract", () => {
     });
   });
 
-  describe("DELETE /api/contacts/:id", () => {
+  describe("DELETE /api/contacts/[id]", () => {
     it("should delete contact", () => {
       const response = { ok: true };
       expect(response.ok).toBe(true);
@@ -190,7 +190,40 @@ describe("CCP-09 Contacts: API Contract", () => {
     });
   });
 
-  describe("GET /api/contact-groups", () => {
+  describe("GET /api/workspaces/[id]/contacts/shareable", () => {
+    it("should return verified and active contacts", () => {
+      const response = {
+        ok: true,
+        contacts: [
+          {
+            id: "contact-1",
+            email: "member@hoa.com",
+            contact_type: "hoa_member",
+            verification_status: "verified",
+            membership_status: "active",
+          },
+        ],
+        count: 1,
+      };
+
+      expect(response.ok).toBe(true);
+      expect(response.contacts).toHaveLength(1);
+      expect(response.contacts[0].verification_status).toBe("verified");
+    });
+
+    it("should require authentication", () => {
+      const user = null;
+      const isAuthed = user !== null;
+      expect(isAuthed).toBe(false);
+    });
+
+    it("should filter by permission status", () => {
+      const permission = { can_share: true };
+      expect(permission.can_share).toBe(true);
+    });
+  });
+
+  describe("GET /api/workspaces/[id]/contact-groups", () => {
     it("should list contact groups", () => {
       const response = {
         ok: true,

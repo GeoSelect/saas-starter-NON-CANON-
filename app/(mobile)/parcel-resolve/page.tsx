@@ -23,6 +23,7 @@ export default function MobileParcelResolvePage() {
     openSheet,
     setOpenSheet,
     handleSearch,
+    handleMapClick,
     openParcel,
     createReport,
     gatedAction,
@@ -37,11 +38,11 @@ export default function MobileParcelResolvePage() {
         </div>
         <h1 className="text-xl font-semibold">Find a parcel</h1>
         <p className="text-sm text-muted-foreground">
-          Search by address or APN. Tap a result to see details.
+          Click the map or search by address/APN. Tap a result to see details.
         </p>
       </header>
 
-      <MapView />
+      <MapView onMapClick={handleMapClick} />
 
       <Card>
         <CardHeader className="pb-3">

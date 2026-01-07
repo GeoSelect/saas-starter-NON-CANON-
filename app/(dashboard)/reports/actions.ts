@@ -1,229 +1,253 @@
+/**
+ * CCP-01: Report Creation Actions
+ *
+ * Server actions for creating and managing parcel reports
+ */
+
 'use server';
 
-import { z } from 'zod';
-import { eq, and, desc } from 'drizzle-orm';
-import { db } from '@/lib/db/drizzle';
-import { reports } from '@/lib/db/schema';
-import { getUser, getTeamForUser } from '@/lib/db/queries';
-import { validatedActionWithUser } from '@/lib/auth/middleware';
-import { nanoid } from 'nanoid';
-import { logger } from '@/lib/observability/logger';
-import type { ParcelResult } from '@/components/parcel/ParcelDetailsSheet';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
-const createReportSchema = z.object({
-  title: z.string().min(3).max(255),
-  description: z.string().max(1000).optional(),
-  parcelData: z.any(), // ParcelResult as JSON
-  findings: z.any().optional(),
-  tags: z.array(z.string()).optional(),
-});
+export type CreateReportInput = {
+  parcel_id: string;
+  report_type: string;
+  title?: string;
+  description?: string;
+  data?: Record<string, any>;
+};
 
-const updateReportSchema = z.object({
-  reportId: z.string(),
-  title: z.string().min(3).max(255).optional(),
-  description: z.string().max(1000).optional(),
-  findings: z.any().optional(),
-  tags: z.array(z.string()).optional(),
-});
+export type CreateReportResponse = {
+  success: boolean;
+  report_id?: string;
+  error?: {
+    code: string;
+    message: string;
+  };
+};
 
-const deleteReportSchema = z.object({
-  reportId: z.string(),
-});
-
-export const createReport = validatedActionWithUser(
-  createReportSchema,
-  async (data, formData, user) => {
-    const startTime = Date.now();
-    try {
-      const team = await getTeamForUser();
-      if (!team) {
-        logger.warn('report_create_no_team', { userId: user.id });
-        return { error: 'Team not found' };
-      }
-
-      // Parse parcelData if it's a JSON string
-      let parcelData = data.parcelData;
-      if (typeof parcelData === 'string') {
-        parcelData = JSON.parse(parcelData);
-      }
-      parcelData = parcelData as ParcelResult;
-
-      const reportId = nanoid(12);
-
-      // Ensure IDs are numbers for database insert
-      const teamIdNum = typeof team.id === 'string' ? parseInt(team.id) : team.id;
-      const userIdNum = typeof user.id === 'string' ? parseInt(user.id) : user.id;
-
-      const newReport = {
-        id: reportId,
-        teamId: teamIdNum,
-        userId: userIdNum,
-        title: data.title,
-        description: data.description || null,
-        parcelId: parcelData.id,
-        address: parcelData.address,
-        apn: parcelData.apn || null,
-        jurisdiction: parcelData.jurisdiction || null,
-        zoning: parcelData.zoning || null,
-        parcelSnapshot: parcelData,
-        findings: data.findings || null,
-        tags: data.tags || [],
-        status: 'draft',
-        shareToken: null,
-        shareTokenExpiresAt: null,
-      };
-
-      const result = await db.insert(reports).values(newReport as any).returning();
-
-      if (!result || result.length === 0) {
-        logger.error('report_create_db_insert_failed', new Error('No result from insert'), {
-          reportId,
-          teamId: teamIdNum,
-          userId: userIdNum,
-        });
-        return { error: 'Failed to insert report into database' };
-      }
-
-      const duration = Date.now() - startTime;
-      logger.info('report_created', {
-        reportId,
-        teamId: teamIdNum,
-        userId: userIdNum,
-        title: data.title,
-        address: parcelData.address,
-        duration,
-      });
-
-      return {
-        success: `Report "${data.title}" created successfully`,
-        reportId,
-        title: data.title,
-      };
-    } catch (error: any) {
-      const duration = Date.now() - startTime;
-      logger.error('report_create_failed', error, {
-        userId: user.id,
-        title: data.title,
-        duration,
-      });
-      return { error: error?.message || 'Failed to create report' };
-    }
-  }
-);
-
-export const updateReport = validatedActionWithUser(
-  updateReportSchema,
-  async (data, formData, user) => {
-    try {
-      const team = await getTeamForUser();
-      if (!team) {
-        return { error: 'Team not found' };
-      }
-
-      const updates: any = {};
-      if (data.title) updates.title = data.title;
-      if (data.description) updates.description = data.description;
-      if (data.findings) updates.findings = data.findings;
-      if (data.tags) updates.tags = data.tags;
-      updates.updatedAt = new Date();
-
-      await db
-        .update(reports)
-        .set(updates)
-        .where(
-          and(
-            eq(reports.id, data.reportId),
-            eq(reports.teamId, team.id),
-            eq(reports.userId, user.id)
-          )
-        );
-
-      return { success: 'Report updated successfully' };
-    } catch (error: any) {
-      return { error: error?.message || 'Failed to update report' };
-    }
-  }
-);
-
-export const deleteReport = validatedActionWithUser(
-  deleteReportSchema,
-  async (data, formData, user) => {
-    try {
-      const team = await getTeamForUser();
-      if (!team) {
-        return { error: 'Team not found' };
-      }
-
-      await db
-        .delete(reports)
-        .where(
-          and(
-            eq(reports.id, data.reportId),
-            eq(reports.teamId, team.id),
-            eq(reports.userId, user.id)
-          )
-        );
-
-      return { success: 'Report deleted successfully' };
-    } catch (error: any) {
-      return { error: error?.message || 'Failed to delete report' };
-    }
-  }
-);
-
-export async function getTeamReports() {
+/**
+ * Create a new parcel report
+ *
+ * Requires:
+ * - User authentication
+ * - can_create_reports entitlement
+ * - Valid workspace context
+ */
+export async function createReport(
+  input: CreateReportInput
+): Promise<CreateReportResponse> {
   try {
-    const user = await getUser();
-    if (!user) {
-      return { error: 'Not authenticated' };
+    const cookieStore = await cookies();
+
+    // Create Supabase client
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // Handle cookie setting errors
+            }
+          },
+        },
+      }
+    );
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        success: false,
+        error: {
+          code: 'UNAUTHENTICATED',
+          message: 'User is not authenticated',
+        },
+      };
     }
 
-    const team = await getTeamForUser();
-    if (!team) {
-      return { error: 'Team not found' };
+    // Get user's active workspace and check entitlements
+    const { data: membership } = await supabase
+      .from('workspace_memberships')
+      .select('workspace_id, can_create_reports')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+
+    if (!membership?.can_create_reports) {
+      return {
+        success: false,
+        error: {
+          code: 'PERMISSION_DENIED',
+          message: 'User does not have permission to create reports',
+        },
+      };
     }
 
-    const teamReports = await db
-      .select()
-      .from(reports)
-      .where(eq(reports.teamId, team.id))
-      .orderBy(desc(reports.createdAt));
+    // Create report in database
+    const { data: report, error: createError } = await supabase
+      .from('reports')
+      .insert({
+        user_id: user.id,
+        workspace_id: membership.workspace_id,
+        parcel_id: input.parcel_id,
+        report_type: input.report_type,
+        title: input.title || `${input.report_type} Report`,
+        description: input.description,
+        data: input.data || {},
+        created_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
 
-    return { data: teamReports };
-  } catch (error: any) {
-    return { error: error?.message || 'Failed to fetch reports' };
+    if (createError || !report) {
+      console.error('[createReport] Database error:', createError);
+      return {
+        success: false,
+        error: {
+          code: 'DATABASE_ERROR',
+          message: 'Failed to create report',
+        },
+      };
+    }
+
+    // Log activity
+    await supabase.from('user_activity').insert({
+      user_id: user.id,
+      workspace_id: membership.workspace_id,
+      activity_type: 'report_created',
+      resource_id: report.id,
+      resource_type: 'report',
+      metadata: {
+        parcel_id: input.parcel_id,
+        report_type: input.report_type,
+      },
+    });
+
+    return {
+      success: true,
+      report_id: report.id,
+    };
+  } catch (error) {
+    console.error('[createReport] Error:', error);
+
+    return {
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred',
+      },
+    };
   }
 }
 
-export async function getReportById(reportId: string) {
+/**
+ * Delete a report
+ *
+ * Requires:
+ * - User authentication
+ * - Report ownership or admin role
+ */
+export async function deleteReport(reportId: string): Promise<CreateReportResponse> {
   try {
-    const user = await getUser();
-    if (!user) {
-      return { error: 'Not authenticated' };
+    const cookieStore = await cookies();
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // Handle cookie setting errors
+            }
+          },
+        },
+      }
+    );
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        success: false,
+        error: {
+          code: 'UNAUTHENTICATED',
+          message: 'User is not authenticated',
+        },
+      };
     }
 
-    const team = await getTeamForUser();
-    if (!team) {
-      return { error: 'Team not found' };
+    // Verify ownership
+    const { data: report, error: fetchError } = await supabase
+      .from('reports')
+      .select('id, user_id')
+      .eq('id', reportId)
+      .single();
+
+    if (fetchError || !report || report.user_id !== user.id) {
+      return {
+        success: false,
+        error: {
+          code: 'NOT_FOUND_OR_UNAUTHORIZED',
+          message: 'Report not found or unauthorized',
+        },
+      };
     }
 
-    const report = await db
-      .select()
-      .from(reports)
-      .where(
-        and(
-          eq(reports.id, reportId),
-          eq(reports.teamId, team.id)
-        )
-      )
-      .limit(1);
+    // Delete report
+    const { error: deleteError } = await supabase
+      .from('reports')
+      .delete()
+      .eq('id', reportId);
 
-    if (report.length === 0) {
-      return { error: 'Report not found' };
+    if (deleteError) {
+      console.error('[deleteReport] Error:', deleteError);
+      return {
+        success: false,
+        error: {
+          code: 'DATABASE_ERROR',
+          message: 'Failed to delete report',
+        },
+      };
     }
 
-    return { data: report[0] };
-  } catch (error: any) {
-    return { error: error?.message || 'Failed to fetch report' };
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error('[deleteReport] Error:', error);
+
+    return {
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred',
+      },
+    };
   }
 }

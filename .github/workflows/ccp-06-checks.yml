@@ -1,0 +1,66 @@
+name: CCP-06 UnlockDetails Paywall Enforcement
+
+on:
+  pull_request:
+    paths:
+      - 'lib/contracts/upgrade.ts'
+      - 'lib/contracts/audit.ts'
+      - 'lib/components/C046-UnlockDetails.tsx'
+      - 'lib/hooks/useUpgradeResolver.ts'
+      - 'lib/hooks/useBlockedAudit.ts'
+      - 'app/api/upgrade-option/**'
+      - 'app/api/audit/**'
+      - 'tests/components/C046-UnlockDetails.test.tsx'
+      - 'e2e/c046-unlock-details.spec.ts'
+      - '.github/workflows/ccp-06-checks.yml'
+
+jobs:
+  unit-tests:
+    name: C046 Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test -- tests/components/C046-UnlockDetails.test.tsx
+
+  e2e-paywall:
+    name: C046 E2E Paywall Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+      - run: npm ci
+      - run: npm exec playwright install --with-deps
+      - run: npm run e2e -- --project=chromium --grep @c046 --reporter=dot
+
+  type-check:
+    name: C046 Type Safety
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+      - run: npm ci
+      - run: pnpm tsc --noEmit lib/contracts/upgrade.ts lib/components/C046-UnlockDetails.tsx
+
+  lint:
+    name: C046 Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint -- lib/components/C046-UnlockDetails.tsx lib/hooks/useUpgradeResolver.ts

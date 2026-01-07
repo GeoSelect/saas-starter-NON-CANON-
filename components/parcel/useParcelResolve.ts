@@ -113,6 +113,53 @@ export function useParcelResolve() {
     }
   }
 
+  async function handleMapClick(lat: number, lng: number) {
+    setLoading(true);
+    setParcels([]);
+    setActive(null);
+
+    try {
+      // Use API endpoint for coordinate-based search
+      const res = await fetch("/api/parcel/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat, lng, mode: "latlng", limit: 20 }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.message || "Failed to resolve parcel");
+      }
+
+      const data = (await res.json()) as ParcelResolveResponse;
+      const results = data.results ?? [];
+      setParcels(results);
+      
+      // If exactly one result, auto-select it
+      if (results.length === 1) {
+        setActive(results[0]);
+        setOpenSheet(true);
+        toast.success("Parcel found", { 
+          description: results[0].address 
+        });
+      } else if (results.length > 1) {
+        toast.info("Multiple parcels found", { 
+          description: `${results.length} parcels near this location. Select one from the list.` 
+        });
+      } else {
+        toast.warning("No parcels found", { 
+          description: "Click a different location or use the search box." 
+        });
+      }
+    } catch (err: any) {
+      toast.error("Map search failed", { 
+        description: err?.message ?? "Try using the search box instead." 
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function openParcel(parcel: ParcelResult) {
     setActive(parcel);
     setOpenSheet(true);
@@ -161,6 +208,53 @@ export function useParcelResolve() {
     }
   }
 
+  async function createSnapshot(workspaceId: string, notesText: string) {
+    if (!active) {
+      toast.error("Select a parcel first");
+      throw new Error("No parcel selected");
+    }
+
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceId}/snapshots`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          parcel_id: active.id,
+          parcel_address: active.address,
+          parcel_jurisdiction: active.jurisdiction,
+          parcel_zoning: active.zoning,
+          parcel_apn: active.apn,
+          parcel_sources: active.sources,
+          summary_text: notesText,
+          constraints: {},
+          sources: {},
+          metadata: {
+            latitude: active.lat,
+            longitude: active.lng,
+          },
+        }),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("Sign in to create snapshots");
+      }
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || "Failed to create snapshot");
+      }
+
+      const data = await res.json();
+      toast.success("Snapshot created", {
+        description: `${active.address} has been captured and saved.`,
+      });
+      return data.snapshot;
+    } catch (err: any) {
+      toast.error("Snapshot creation failed", { description: err?.message ?? "Unexpected error" });
+      throw err;
+    }
+  }
+
   function gatedAction(label: string) {
     toast.warning(`${label} requires an account`, {
       description: "Create an account to build your workspace."
@@ -176,8 +270,10 @@ export function useParcelResolve() {
     openSheet,
     setOpenSheet,
     handleSearch,
+    handleMapClick,
     openParcel,
     createReport,
+    createSnapshot,
     gatedAction,
   };
 }

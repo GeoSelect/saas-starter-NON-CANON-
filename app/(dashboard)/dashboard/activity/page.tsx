@@ -1,126 +1,124 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Settings,
-  LogOut,
-  UserPlus,
-  Lock,
-  UserCog,
-  AlertCircle,
-  UserMinus,
-  Mail,
-  CheckCircle,
-  type LucideIcon,
-} from 'lucide-react';
-import { ActivityType } from '@/lib/db/schema';
-import { getActivityLogs } from '@/lib/db/queries';
 
-const iconMap: Record<ActivityType, LucideIcon> = {
-  [ActivityType.SIGN_UP]: UserPlus,
-  [ActivityType.SIGN_IN]: UserCog,
-  [ActivityType.SIGN_OUT]: LogOut,
-  [ActivityType.UPDATE_PASSWORD]: Lock,
-  [ActivityType.DELETE_ACCOUNT]: UserMinus,
-  [ActivityType.UPDATE_ACCOUNT]: Settings,
-  [ActivityType.CREATE_TEAM]: UserPlus,
-  [ActivityType.REMOVE_TEAM_MEMBER]: UserMinus,
-  [ActivityType.INVITE_TEAM_MEMBER]: Mail,
-  [ActivityType.ACCEPT_INVITATION]: CheckCircle,
-};
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Check } from 'lucide-react';
+import { mockEvents, mockDocuments, mockParcels } from '@/lib/test/mockActivityDb';
 
-function getRelativeTime(date: Date) {
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (diffInSeconds < 60) return 'just now';
-  if (diffInSeconds < 3600)
-    return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-  if (diffInSeconds < 86400)
-    return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-  if (diffInSeconds < 604800)
-    return `${Math.floor(diffInSeconds / 86400)} days ago`;
-  return date.toLocaleDateString();
-}
-
-function formatAction(action: ActivityType): string {
-  switch (action) {
-    case ActivityType.SIGN_UP:
-      return 'You signed up';
-    case ActivityType.SIGN_IN:
-      return 'You signed in';
-    case ActivityType.SIGN_OUT:
-      return 'You signed out';
-    case ActivityType.UPDATE_PASSWORD:
-      return 'You changed your password';
-    case ActivityType.DELETE_ACCOUNT:
-      return 'You deleted your account';
-    case ActivityType.UPDATE_ACCOUNT:
-      return 'You updated your account';
-    case ActivityType.CREATE_TEAM:
-      return 'You created a new team';
-    case ActivityType.REMOVE_TEAM_MEMBER:
-      return 'You removed a team member';
-    case ActivityType.INVITE_TEAM_MEMBER:
-      return 'You invited a team member';
-    case ActivityType.ACCEPT_INVITATION:
-      return 'You accepted an invitation';
-    default:
-      return 'Unknown action occurred';
-  }
-}
-
-export default async function ActivityPage() {
-  const logs = await getActivityLogs();
+export default function ActivityPage() {
+  // Use mock database for each section
+  const events = mockEvents;
+  const documents = mockDocuments;
+  const parcels = mockParcels;
+  // Demo payment activity
+  const payments = [
+    {
+      id: 'pay1',
+      type: 'Stripe Checkout',
+      user: 'alice@example.com',
+      date: '2026-01-04',
+      status: 'Completed',
+      amount: '$99.00',
+      link: 'https://dashboard.stripe.com/test/payments',
+    },
+  ];
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
-      <h1 className="text-lg lg:text-2xl font-medium text-gray-900 mb-6">
-        Activity Log
-      </h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {logs.length > 0 ? (
-            <ul className="space-y-4">
-              {logs.map((log) => {
-                const Icon = iconMap[log.action as ActivityType] || Settings;
-                const formattedAction = formatAction(
-                  log.action as ActivityType
-                );
+    <main className="max-w-4xl mx-auto px-4 py-12">
+      <h1 className="text-3xl font-bold mb-8">Shared Links Activity Log (Demo)</h1>
 
-                return (
-                  <li key={log.id} className="flex items-center space-x-4">
-                    <div className="bg-orange-100 rounded-full p-2">
-                      <Icon className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">
-                        {formattedAction}
-                        {log.ipAddress && ` from IP ${log.ipAddress}`}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {getRelativeTime(new Date(log.timestamp))}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <div className="flex flex-col items-center justify-center text-center py-12">
-              <AlertCircle className="h-12 w-12 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No activity yet
-              </h3>
-              <p className="text-sm text-gray-500 max-w-sm">
-                When you perform actions like signing in or updating your
-                account, they'll appear here.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </section>
+      <section className="mb-10">
+        <div className="relative pl-6">
+          <div className="absolute left-0 top-2 w-2 h-full bg-gray-200 rounded-full" />
+          <h2 className="text-xl font-semibold mb-1">Events</h2>
+          <a href="/docs/audit-logging" className="text-blue-600 text-sm mb-4 block hover:underline">Track all user and system events in the audit log</a>
+        </div>
+        <div className="space-y-4 mt-2">
+          {events.map((event) => (
+            <Card key={event.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between">
+              <div>
+                <div className="font-semibold">{event.type}</div>
+                <div className="text-gray-600 text-sm">User: {event.user}</div>
+                <div className="text-gray-500 text-xs">Date: {event.date}</div>
+              </div>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${event.status === 'Success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {event.status}
+              </span>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="mb-10">
+        <div className="relative pl-6">
+          <div className="absolute left-0 top-2 w-2 h-full bg-gray-200 rounded-full" />
+          <h2 className="text-xl font-semibold mb-1">Documents</h2>
+          <a href="/docs/SECURITY" className="text-blue-600 text-sm mb-4 block hover:underline">Learn how documents are shared and tracked</a>
+        </div>
+        <div className="space-y-4 mt-2">
+          {documents.map((doc) => (
+            <Card key={doc.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between">
+              <div>
+                <div className="font-semibold">{doc.name}</div>
+                <div className="text-gray-600 text-sm">Shared with: {doc.sharedWith}</div>
+                <div className="text-gray-500 text-xs">Date: {doc.date}</div>
+              </div>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${doc.status === 'Viewed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                {doc.status === 'Viewed' ? <Check className="h-4 w-4 mr-1" /> : null}
+                {doc.status}
+              </span>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="mb-10">
+        <div className="relative pl-6">
+          <div className="absolute left-0 top-2 w-2 h-full bg-gray-200 rounded-full" />
+          <h2 className="text-xl font-semibold mb-1">Parcels</h2>
+          <a href="/docs/ccp/contracts" className="text-blue-600 text-sm mb-4 block hover:underline">See how parcels are tracked and shared</a>
+        </div>
+        <div className="space-y-4 mt-2">
+          {parcels.map((parcel) => (
+            <Card key={parcel.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between">
+              <div>
+                <div className="font-semibold">Parcel: {parcel.parcelId}</div>
+                <div className="text-gray-600 text-sm">Action: {parcel.action}</div>
+                <div className="text-gray-600 text-sm">Contact: {parcel.contact}</div>
+                <div className="text-gray-500 text-xs">Date: {parcel.date}</div>
+              </div>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${parcel.status === 'Viewed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                {parcel.status === 'Viewed' ? <Check className="h-4 w-4 mr-1" /> : null}
+                {parcel.status}
+              </span>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <div className="relative pl-6">
+          <div className="absolute left-0 top-2 w-2 h-full bg-gray-200 rounded-full" />
+          <h2 className="text-xl font-semibold mb-1">Payment</h2>
+          <a href="/docs/stripe" className="text-blue-600 text-sm mb-4 block hover:underline">See Stripe payment activity and integration</a>
+        </div>
+        <div className="space-y-4 mt-2">
+          {payments.map((pay) => (
+            <Card key={pay.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between">
+              <div>
+                <div className="font-semibold">{pay.type}</div>
+                <div className="text-gray-600 text-sm">User: {pay.user}</div>
+                <div className="text-gray-600 text-sm">Amount: {pay.amount}</div>
+                <div className="text-gray-500 text-xs">Date: {pay.date}</div>
+              </div>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800`}>
+                {pay.status}
+              </span>
+              <a href={pay.link} target="_blank" rel="noopener" className="ml-4 text-blue-600 text-xs underline">View in Stripe</a>
+            </Card>
+          ))}
+        </div>
+      </section>
+    </main>
   );
 }

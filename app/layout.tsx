@@ -5,6 +5,8 @@ import { getUser, getTeamForUser } from '@/lib/db/queries';
 import { SWRConfig } from 'swr';
 import { Toaster } from '@/components/ui/sonner';
 import { AppProvider } from '@/lib/context/AppContext';
+import { WorkspaceContextProvider } from '@/lib/context/WorkspaceContext';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'Next.js SaaS Starter',
@@ -16,6 +18,23 @@ export const viewport: Viewport = {
 };
 
 const manrope = Manrope({ subsets: ['latin'] });
+
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          // We do NOT await here
+          // Only components that read this data will suspend
+          '/api/user': getUser(),
+          '/api/team': getTeamForUser()
+        }
+      }}
+    >
+      {children}
+    </SWRConfig>
+  );
+}
 
 export default function RootLayout({
   children
@@ -29,21 +48,17 @@ export default function RootLayout({
     >
       <body className="min-h-[100dvh] bg-gray-50">
         <AppProvider>
-          <SWRConfig
-            value={{
-              fallback: {
-                // We do NOT await here
-                // Only components that read this data will suspend
-                '/api/user': getUser(),
-                '/api/team': getTeamForUser()
-              }
-            }}
-          >
-            {children}
-          </SWRConfig>
+          <WorkspaceContextProvider>
+            <Suspense fallback={<div>Loading...</div>}>
+              <LayoutContent>
+                {children}
+              </LayoutContent>
+            </Suspense>
+          </WorkspaceContextProvider>
         </AppProvider>
         <Toaster />
       </body>
     </html>
   );
 }
+

@@ -1,9 +1,27 @@
+
+
 'use client';
+
+import { ReactNode } from 'react';
+import { DashboardHeader } from '@/components/nav/dashboard-header';
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <div className="min-h-screen">
+      <DashboardHeader />
+      <main>{children}</main>
+    </div>
+  );
+}
 
 import Link from 'next/link';
 import { use, useState, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { CircleIcon, Home, LogOut, FileText } from 'lucide-react';
+import { CircleIcon, Home, LogOut, FileText, Map } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,6 +84,12 @@ function UserMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem className="cursor-pointer">
+          <Link href="/parcel/resolve" className="flex w-full items-center">
+            <Map className="mr-2 h-4 w-4" />
+            <span>Parcel Search</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer">
           <Link href="/dashboard/reports" className="flex w-full items-center">
             <FileText className="mr-2 h-4 w-4" />
             <span>My Reports</span>
@@ -102,11 +126,4 @@ function Header() {
   );
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col min-h-screen">
-      <Header />
-      {children}
-    </section>
-  );
-}
+

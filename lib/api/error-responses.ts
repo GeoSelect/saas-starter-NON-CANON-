@@ -107,7 +107,7 @@ export function conflict(
 ): Response {
   return new Response(
     JSON.stringify({
-      error: 'CONFLICT',
+      error: 'conflict',
       message,
       status: 409,
     }),

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,16 +8,15 @@ import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Testimonial = {
-  name: string;
+  name:  string;
   role: string;
   company: string;
-  avatar?: string;
+  avatar?:  string;
   quote: string;
   verified?: boolean;
 };
 
 // 🎯 POST-LAUNCH: Replace with real customer testimonials
-// Consider using a CMS or database to manage these dynamically
 const testimonials: Testimonial[] = [
   {
     name: "Sarah Chen",
@@ -55,7 +54,6 @@ export function TestimonialCarousel() {
       <Card className="w-full">
         <CardContent className="pt-6">
           <div className="space-y-4">
-            {/* Quote */}
             <div className="flex items-start gap-3">
               <Quote className="h-6 w-6 sm:h-8 sm:w-8 text-primary/30 flex-shrink-0" />
               <p className="text-sm sm:text-base text-foreground leading-relaxed">
@@ -63,12 +61,11 @@ export function TestimonialCarousel() {
               </p>
             </div>
 
-            {/* Author - Mobile optimized */}
             <div className="flex items-center gap-3 pt-3 border-t">
               <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
                 <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
                 <AvatarFallback className="text-sm">
-                  {testimonial.name.charAt(0)}
+                  {testimonial.name. charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
@@ -95,7 +92,6 @@ export function TestimonialCarousel() {
         </CardContent>
       </Card>
 
-      {/* Navigation - Mobile optimized */}
       <div className="flex items-center justify-center gap-3">
         <Button
           size="sm"
@@ -108,7 +104,7 @@ export function TestimonialCarousel() {
         </Button>
         
         <div className="flex gap-1.5">
-          {testimonials.map((_, idx) => (
+          {testimonials. map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrent(idx)}

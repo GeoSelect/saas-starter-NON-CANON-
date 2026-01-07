@@ -1,0 +1,363 @@
+name: CCP-05 Entitlements Hardening Checks
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'lib/services/entitlements.ts'
+      - 'lib/contracts/ccp05/**'
+      - 'app/api/workspaces/**/entitlements/**'
+      - 'app/api/webhooks/stripe/**'
+      - 'migrations/009_ccp05_entitlements.sql'
+      - 'tests/**entitlements**'
+      - '.github/workflows/ccp-05-entitlement-checks.yml'
+
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'lib/services/entitlements.ts'
+      - 'lib/contracts/ccp05/**'
+      - 'app/api/workspaces/**/entitlements/**'
+      - 'app/api/webhooks/stripe/**'
+      - 'migrations/009_ccp05_entitlements.sql'
+      - 'tests/**entitlements**'
+      - '.github/workflows/ccp-05-entitlement-checks.yml'
+
+jobs:
+  # Job 1: TypeScript Type Checking
+  type-check:
+    name: TypeScript Strict Mode
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check entitlements service
+        run: npx tsc --noEmit lib/services/entitlements.ts
+
+      - name: Type check contracts
+        run: npx tsc --noEmit lib/contracts/ccp05/entitlements.ts
+
+      - name: Type check API routes
+        run: npx tsc --noEmit app/api/workspaces/\[workspace_id\]/entitlements/route.ts app/api/workspaces/\[workspace_id\]/entitlements/\[feature\]/route.ts app/api/webhooks/stripe/route.ts
+
+  # Job 2: Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: type-check
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run entitlements service unit tests
+        run: npm test -- tests/services/entitlements.test.ts --coverage --coverage-reporters=text-summary
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+          flags: entitlements
+          name: entitlements-coverage
+
+  # Job 3: Integration Tests
+  integration-tests:
+    name: Integration Tests (Stripe → DB → Cache)
+    runs-on: ubuntu-latest
+    needs: type-check
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+        run: |
+          npm run db:migrate -- --env test
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          STRIPE_SECRET_KEY: sk_test_dummy
+          STRIPE_WEBHOOK_SECRET: whsec_test_dummy
+        run: npm test -- tests/integration/stripe-entitlements.test.ts --coverage
+
+  # Job 4: Hardening Validation
+  hardening-checks:
+    name: Hardening Compliance Audit
+    runs-on: ubuntu-latest
+    needs: [type-check, unit-tests]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify tier hierarchy is numeric
+        run: |
+          node -e "
+            const { TIER_ORDER } = require('./lib/contracts/ccp05/entitlements.ts');
+            const tiers = ['free', 'pro', 'pro_plus', 'portfolio', 'enterprise'];
+            const order = Object.values(TIER_ORDER);
+            
+            // Verify numeric progression
+            for (let i = 0; i < order.length; i++) {
+              if (order[i] !== i) {
+                console.error('FAILED: TIER_ORDER is not sequential 0-4');
+                process.exit(1);
+              }
+            }
+            console.log('✓ Tier hierarchy is properly ordered (0-4)');
+          "
+
+      - name: Verify tier requirements exist for all features
+        run: |
+          node -e "
+            const { TIER_REQUIREMENTS } = require('./lib/contracts/ccp05/entitlements.ts');
+            const featureCount = Object.keys(TIER_REQUIREMENTS).length;
+            
+            if (featureCount !== 14) {
+              console.error('FAILED: Expected 14 features, got ' + featureCount);
+              process.exit(1);
+            }
+            console.log('✓ All 14 features have tier requirements');
+          "
+
+      - name: Verify denial reasons enum values
+        run: |
+          node -e "
+            const fs = require('fs');
+            const content = fs.readFileSync('./lib/contracts/ccp05/entitlements.ts', 'utf-8');
+            
+            const reasons = [
+              'TIER_INSUFFICIENT',
+              'FEATURE_DISABLED',
+              'GRACE_PERIOD_EXPIRED',
+              'SUBSCRIPTION_INACTIVE',
+              'TRIAL_NOT_STARTED',
+              'FEATURE_UNAVAILABLE',
+              'SYSTEM_MAINTENANCE',
+              'RATE_LIMIT_EXCEEDED'
+            ];
+            
+            for (const reason of reasons) {
+              if (!content.includes(reason)) {
+                console.error('FAILED: Missing denial reason ' + reason);
+                process.exit(1);
+              }
+            }
+            console.log('✓ All 8 denial reasons defined');
+          "
+
+      - name: Verify cache TTL is set correctly
+        run: |
+          node -e "
+            const { ENTITLEMENT_CACHE_TTL_SECONDS } = require('./lib/contracts/ccp05/entitlements.ts');
+            
+            if (ENTITLEMENT_CACHE_TTL_SECONDS !== 300) {
+              console.error('FAILED: Cache TTL should be 300 seconds (5 min), got ' + ENTITLEMENT_CACHE_TTL_SECONDS);
+              process.exit(1);
+            }
+            console.log('✓ Cache TTL correctly set to 300 seconds (5 minutes)');
+          "
+
+      - name: Verify RLS policies in migration
+        run: |
+          node -e "
+            const fs = require('fs');
+            const migration = fs.readFileSync('./migrations/009_ccp05_entitlements.sql', 'utf-8');
+            
+            const policies = [
+              'CREATE POLICY',
+              'entitlements',
+              'entitlement_checks',
+              'RLS_WORKSPACE_MEMBER'
+            ];
+            
+            for (const policy of policies) {
+              if (!migration.includes(policy)) {
+                console.error('FAILED: Missing RLS policy element: ' + policy);
+                process.exit(1);
+              }
+            }
+            console.log('✓ RLS policies present in migration');
+          "
+
+      - name: Verify service exports required functions
+        run: |
+          node -e "
+            const exports = require('./lib/services/entitlements.ts');
+            const required = [
+              'getEntitlementStatus',
+              'getBillingState',
+              'checkMultipleEntitlements',
+              'invalidateWorkspaceCache',
+              'syncBillingStateFromStripe',
+              'auditEntitlementCheck'
+            ];
+            
+            for (const func of required) {
+              if (typeof exports[func] !== 'function') {
+                console.error('FAILED: Missing required function: ' + func);
+                process.exit(1);
+              }
+            }
+            console.log('✓ All required service functions exported');
+          "
+
+      - name: Verify API routes implement auth checks
+        run: |
+          node -e "
+            const fs = require('fs');
+            const featureRoute = fs.readFileSync('./app/api/workspaces/[workspace_id]/entitlements/[feature]/route.ts', 'utf-8');
+            const listRoute = fs.readFileSync('./app/api/workspaces/[workspace_id]/entitlements/route.ts', 'utf-8');
+            
+            const authRequired = ['getUser()', 'workspace_members', '401', '403'];
+            
+            for (const authCheck of authRequired) {
+              if (!featureRoute.includes(authCheck)) {
+                console.error('FAILED: [feature] route missing auth check: ' + authCheck);
+                process.exit(1);
+              }
+              if (!listRoute.includes(authCheck)) {
+                console.error('FAILED: [list] route missing auth check: ' + authCheck);
+                process.exit(1);
+              }
+            }
+            console.log('✓ API routes implement auth checks (401, 403)');
+          "
+
+      - name: Verify Stripe webhook signature validation
+        run: |
+          node -e "
+            const fs = require('fs');
+            const webhook = fs.readFileSync('./app/api/webhooks/stripe/route.ts', 'utf-8');
+            
+            if (!webhook.includes('stripe.webhooks.constructEvent')) {
+              console.error('FAILED: Webhook not validating Stripe signature');
+              process.exit(1);
+            }
+            if (!webhook.includes('stripe-signature')) {
+              console.error('FAILED: Webhook not checking signature header');
+              process.exit(1);
+            }
+            console.log('✓ Webhook validates Stripe signatures');
+          "
+
+      - name: Verify no client-side feature bypass possible
+        run: |
+          node -e "
+            const fs = require('fs');
+            const apiRoute = fs.readFileSync('./app/api/workspaces/[workspace_id]/entitlements/[feature]/route.ts', 'utf-8');
+            
+            // Server must call getEntitlementStatus, not accept client data
+            if (!apiRoute.includes('getEntitlementStatus')) {
+              console.error('FAILED: API route not calling server-authoritative service');
+              process.exit(1);
+            }
+            if (apiRoute.includes('req.body.enabled') || apiRoute.includes('req.body.allowed')) {
+              console.error('FAILED: API route accepting client-provided entitlement status');
+              process.exit(1);
+            }
+            console.log('✓ No client-side bypass possible (server-authoritative)');
+          "
+
+  # Job 5: ESLint & Code Quality
+  lint:
+    name: Lint & Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint on entitlements code
+        run: npx eslint lib/services/entitlements.ts lib/contracts/ccp05/entitlements.ts app/api/workspaces/\[workspace_id\]/entitlements/** app/api/webhooks/stripe/route.ts --max-warnings 0
+
+      - name: Check code formatting
+        run: npx prettier --check lib/services/entitlements.ts lib/contracts/ccp05/entitlements.ts
+
+  # Final Status
+  hardening-complete:
+    name: CCP-05 Hardening Status
+    runs-on: ubuntu-latest
+    needs: [type-check, unit-tests, integration-tests, hardening-checks, lint]
+    if: always()
+    steps:
+      - name: Check all hardening jobs passed
+        run: |
+          if [[ "${{ needs.type-check.result }}" != "success" ]] || \
+             [[ "${{ needs.unit-tests.result }}" != "success" ]] || \
+             [[ "${{ needs.integration-tests.result }}" != "success" ]] || \
+             [[ "${{ needs.hardening-checks.result }}" != "success" ]] || \
+             [[ "${{ needs.lint.result }}" != "success" ]]; then
+            echo "❌ CCP-05 Hardening FAILED"
+            exit 1
+          fi
+          echo "✅ CCP-05 Entitlements Hardening COMPLETE"
+          echo "- Type checking: PASSED"
+          echo "- Unit tests: PASSED"
+          echo "- Integration tests: PASSED"
+          echo "- Hardening compliance: PASSED"
+          echo "- Code quality: PASSED"
