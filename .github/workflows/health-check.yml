@@ -1,0 +1,231 @@
+name: Health Check Monitoring
+
+on:
+  schedule:
+    # Run every 30 minutes during business hours
+    - cron: '0,30 9-17 * * 1-5'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  HEALTH_ENDPOINT: 'http://api.staging.geoselect.local/health'
+  TIMEOUT_SECONDS: 10
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Health Endpoint
+        id: health_check
+        run: |
+          response=$(curl -s -w "\n%{http_code}" \
+            --max-time ${{ env.TIMEOUT_SECONDS }} \
+            -X GET "${{ env.HEALTH_ENDPOINT }}" \
+            -H "Content-Type: application/json" || echo "000")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+          
+          echo "HTTP_CODE=$http_code" >> $GITHUB_OUTPUT
+          echo "BODY<<EOF" >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "Health Check Response Code: $http_code"
+          echo "Health Check Response Body:"
+          echo "$body" | jq . || echo "$body"
+
+      - name: Validate Health Status
+        run: |
+          http_code=${{ steps.health_check.outputs.HTTP_CODE }}
+          
+          if [[ "$http_code" == "200" ]]; then
+            echo "✅ System is HEALTHY"
+            exit 0
+          elif [[ "$http_code" == "503" ]]; then
+            echo "⚠️ System is DEGRADED"
+            exit 1
+          else
+            echo "❌ System is UNHEALTHY (HTTP $http_code)"
+            exit 1
+          fi
+
+      - name: Parse Health Check Results
+        if: always()
+        run: |
+          echo "${{ steps.health_check.outputs.BODY }}" | jq '.' > health-report.json || echo "{}" > health-report.json
+          cat health-report.json
+
+      - name: Check Database Status
+        if: always()
+        run: |
+          db_status=$(cat health-report.json | jq -r '.checks.database.status // "unknown"')
+          echo "Database: $db_status"
+          
+          if [[ "$db_status" != "connected" ]]; then
+            echo "⚠️ Database not connected"
+          fi
+
+      - name: Check Secrets Manager Status
+        if: always()
+        run: |
+          secrets_status=$(cat health-report.json | jq -r '.checks.secrets.status // "unknown"')
+          secrets_backend=$(cat health-report.json | jq -r '.checks.secrets.backend // "unknown"')
+          echo "Secrets ($secrets_backend): $secrets_status"
+          
+          if [[ "$secrets_status" != "accessible" ]]; then
+            echo "⚠️ AWS Secrets Manager not accessible"
+          fi
+
+      - name: Check Memory Usage
+        if: always()
+        run: |
+          memory_status=$(cat health-report.json | jq -r '.checks.memory.status // "unknown"')
+          heap_used=$(cat health-report.json | jq -r '.checks.memory.heapUsed // 0')
+          heap_total=$(cat health-report.json | jq -r '.checks.memory.heapTotal // 1')
+          
+          echo "Memory: $memory_status"
+          echo "Heap Usage: ${heap_used}/${heap_total} bytes"
+          
+          if [[ "$memory_status" == "critical" ]]; then
+            echo "🚨 CRITICAL: Memory usage is critical"
+          fi
+
+      - name: Check Audit System Status
+        if: always()
+        run: |
+          audit_status=$(cat health-report.json | jq -r '.checks.audit.status // "unknown"')
+          audit_events=$(cat health-report.json | jq -r '.checks.audit.eventsProcessed // 0')
+          
+          echo "Audit System: $audit_status"
+          echo "Events Processed: $audit_events"
+          
+          if [[ "$audit_status" != "operational" ]]; then
+            echo "⚠️ Audit system not operational"
+          fi
+
+      - name: Upload Health Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: health-check-report
+          path: health-report.json
+          retention-days: 30
+
+      - name: Notify Slack on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "❌ Health Check Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "⚠️ *Health Check Failed*\n*Status:* ${{ steps.health_check.outputs.HTTP_CODE }}\n*Repository:* ${{ github.repository }}\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+
+      - name: Publish Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: health-check-logs
+          path: |
+            health-report.json
+          retention-days: 90
+
+  smoke-tests:
+    runs-on: ubuntu-latest
+    needs: health-check
+    if: success()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Health Endpoint Smoke Tests
+        run: npm test -- tests/health.test.ts --coverage
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+          flags: health-checks
+          name: health-endpoints
+
+  alert-on-degraded:
+    runs-on: ubuntu-latest
+    needs: health-check
+    if: failure()
+    
+    steps:
+      - name: Post GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '🚨 Health Check Failed';
+            const body = `
+            ## Health Check Failure Report
+            
+            - **Timestamp**: ${new Date().toISOString()}
+            - **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - **Branch**: ${{ github.ref }}
+            
+            ### Action Required
+            1. Review the health check workflow logs
+            2. Check deployment status
+            3. Verify database and AWS Secrets Manager connectivity
+            4. Check memory usage and audit system status
+            
+            ### Links
+            - [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - [Check Health Endpoint](http://api.staging.geoselect.local/health)
+            `;
+            
+            // Only create new issue if one doesn't exist from recent failure
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ['health-check-failure']
+            });
+            
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['health-check-failure', 'infrastructure']
+              });
+            }
