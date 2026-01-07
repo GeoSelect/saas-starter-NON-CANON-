@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from './button';
 import { FileText } from 'lucide-react';
 

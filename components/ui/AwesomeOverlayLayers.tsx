@@ -1,3 +1,5 @@
+"use client";
+
 import { Source, Layer } from '@vis.gl/react-maplibre';
 import { zoningOverlay, floodOverlay } from './zoning-flood-overlay';
 
@@ -5,7 +7,7 @@ export function AwesomeOverlayLayers() {
   return (
     <>
       {/* Zoning Overlay */}
-      <Source id="zoning" type="geojson" data={zoningOverlay}>
+      <Source id="zoning" type="geojson" data={zoningOverlay as any}>
         <Layer
           id="zoning-fill"
           type="fill"
@@ -24,7 +26,7 @@ export function AwesomeOverlayLayers() {
         />
       </Source>
       {/* Flood Overlay */}
-      <Source id="flood" type="geojson" data={floodOverlay}>
+      <Source id="flood" type="geojson" data={floodOverlay as any}>
         <Layer
           id="flood-fill"
           type="fill"

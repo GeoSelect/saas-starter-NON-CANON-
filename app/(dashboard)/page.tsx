@@ -1,13 +1,22 @@
+"use client";
+
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CreditCard, Database, Map } from 'lucide-react';
+import { ArrowRight, CreditCard, Database, Map, X } from 'lucide-react';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { ParcelDetailsSheet, ParcelResult } from '@/components/parcel/ParcelDetailsSheet';
+import { ParcelResult } from '@/components/parcel/ParcelDetailsSheet';
 import { ShareButton } from '@/components/ui/ShareButton';
 import { ExportPdfButton } from '@/components/ui/ExportPdfButton';
 import { Terminal } from './terminal';
 import { AwesomeLandingMap } from '@/components/ui/AwesomeLandingMap';
 import Link from 'next/link';
-
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 // Mock: Array of resolved parcels (replace with real data source as needed)
 const resolvedParcels: ParcelResult[] = [
@@ -19,8 +28,8 @@ const resolvedParcels: ParcelResult[] = [
     apn: '123-456-789',
     sources: ['Google Maps'],
     notes: 'Recently resolved parcel.',
-    lat: 37.4221,
-    lng: -122.0841,
+    lat: 37.4221 as number | undefined,
+    lng: -122.0841 as number | undefined,
   },
   {
     id: '2',
@@ -30,40 +39,301 @@ const resolvedParcels: ParcelResult[] = [
     apn: '987-654-321',
     sources: ['Google Maps'],
     notes: 'Another resolved parcel.',
-    lat: 37.3318,
-    lng: -122.0312,
+    lat: 37.3318 as number | undefined,
+    lng: -122.0312 as number | undefined,
   },
 ];
 
+// Simple Google Maps embed component
+function ParcelMap({ lat, lng, address }: { lat?: number; lng?: number; address: string }) {
+  if (!lat || !lng) {
+    return (
+      <div className="w-full h-64 rounded-lg overflow-hidden border flex items-center justify-center bg-gray-100">
+        <p className="text-gray-500">Map coordinates not available</p>
+      </div>
+    );
+  }
+  
+  const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(address)}&center=${lat},${lng}&zoom=17`;
+  
+  return (
+    <div className="w-full h-64 rounded-lg overflow-hidden border">
+      <iframe
+        width="100%"
+        height="100%"
+        style={{ border: 0 }}
+        loading="lazy"
+        allowFullScreen
+        referrerPolicy="no-referrer-when-downgrade"
+        src={mapUrl}
+      />
+    </div>
+  );
+}
+
 function ParcelCardsContainer({ parcels }: { parcels: ParcelResult[] }) {
+  const [selectedParcel, setSelectedParcel] = useState<ParcelResult | null>(null);
+
+  const handleExportPdf = (parcel: ParcelResult) => {
+    // Generate static map image URL
+    const mapImageUrl = parcel.lat && parcel.lng 
+      ? `https://maps.googleapis.com/maps/api/staticmap?center=${parcel.lat},${parcel.lng}&zoom=17&size=600x400&markers=color:red%7C${parcel.lat},${parcel.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+      : '';
+
+    // Create a simple HTML content for PDF
+    const content = `
+      <html>
+        <head>
+          <title>Parcel Report - ${parcel.address}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+            h1 { color: #333; border-bottom: 2px solid #f97316; padding-bottom: 10px; }
+            .section { margin: 20px 0; }
+            .label { font-weight: bold; color: #666; margin-bottom: 5px; }
+            .value { color: #333; }
+            .map-container { margin: 20px 0; text-align: center; }
+            .map-container img { max-width: 100%; border: 1px solid #ddd; border-radius: 8px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            @media print {
+              body { padding: 10px; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Parcel Report</h1>
+          
+          ${mapImageUrl ? `
+          <div class="map-container">
+            <img src="${mapImageUrl}" alt="Parcel Location Map" />
+          </div>` : ''}
+          
+          <div class="section">
+            <div class="label">Address</div>
+            <div class="value">${parcel.address}</div>
+          </div>
+          
+          <div class="section">
+            <div class="label">APN (Assessor's Parcel Number)</div>
+            <div class="value">${parcel.apn}</div>
+          </div>
+          
+          <div class="grid">
+            <div class="section">
+              <div class="label">Jurisdiction</div>
+              <div class="value">${parcel.jurisdiction}</div>
+            </div>
+            <div class="section">
+              <div class="label">Zoning</div>
+              <div class="value">${parcel.zoning}</div>
+            </div>
+          </div>
+          
+          ${parcel.lat && parcel.lng ? `
+          <div class="grid">
+            <div class="section">
+              <div class="label">Latitude</div>
+              <div class="value">${parcel.lat}</div>
+            </div>
+            <div class="section">
+              <div class="label">Longitude</div>
+              <div class="value">${parcel.lng}</div>
+            </div>
+          </div>` : ''}
+          
+          ${parcel.sources && parcel.sources.length > 0 ? `
+          <div class="section">
+            <div class="label">Data Sources</div>
+            <div class="value">
+              <ul style="margin: 5px 0; padding-left: 20px;">
+                ${parcel.sources.map(source => `<li>${source}</li>`).join('')}
+              </ul>
+            </div>
+          </div>` : ''}
+          
+          ${parcel.notes ? `
+          <div class="section">
+            <div class="label">Notes</div>
+            <div class="value" style="background: #f5f5f5; padding: 10px; border-radius: 4px;">
+              ${parcel.notes}
+            </div>
+          </div>` : ''}
+          
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; text-align: center;">
+            Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
+          </div>
+        </body>
+      </html>
+    `;
+
+    // Open print dialog (user can save as PDF)
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(content);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+  };
+
   return (
     <section className="mb-12">
       <h2 className="text-2xl font-bold mb-4">Resolved Parcels</h2>
       <Accordion type="multiple" className="space-y-4">
         {parcels.map((parcel) => (
-          <AccordionItem key={parcel.id} value={parcel.id}>
-            <AccordionTrigger>
+          <AccordionItem key={parcel.id} value={parcel.id} className="border rounded-lg">
+            <AccordionTrigger className="px-4">
               <span className="font-semibold text-base cursor-pointer hover:underline">
                 {parcel.address}
               </span>
             </AccordionTrigger>
-            <AccordionContent>
+            <AccordionContent className="px-4 pb-4">
               <div className="flex gap-2 mb-4">
                 <ShareButton onClick={() => alert(`Share ${parcel.address}`)} />
-                <ExportPdfButton onClick={() => alert(`Export PDF for ${parcel.address}`)} />
+                <ExportPdfButton onClick={() => handleExportPdf(parcel)} />
               </div>
-              <ParcelDetailsSheet
-                open={true}
-                onOpenChange={() => {}}
-                parcel={parcel}
-                onCreateReport={() => {}}
-                onGatedAction={() => {}}
-                variant="desktop"
-              />
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">{parcel.address}</h3>
+                    <p className="text-sm text-gray-600">APN: {parcel.apn}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Jurisdiction</p>
+                      <p className="text-base">{parcel.jurisdiction}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Zoning</p>
+                      <p className="text-base">{parcel.zoning}</p>
+                    </div>
+                  </div>
+
+                  {parcel.sources && parcel.sources.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 mb-1">Sources</p>
+                      <ul className="text-sm list-disc list-inside">
+                        {parcel.sources.map((source, idx) => (
+                          <li key={idx}>{source}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {parcel.notes && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 mb-1">Notes</p>
+                      <p className="text-sm">{parcel.notes}</p>
+                    </div>
+                  )}
+
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setSelectedParcel(parcel)}
+                  >
+                    View Full Details
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="lg:row-span-2">
+                  <ParcelMap lat={parcel.lat} lng={parcel.lng} address={parcel.address} />
+                </div>
+              </div>
             </AccordionContent>
           </AccordionItem>
         ))}
       </Accordion>
+
+      <Dialog open={!!selectedParcel} onOpenChange={(open) => !open && setSelectedParcel(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedParcel?.address}</DialogTitle>
+            <DialogDescription>
+              Detailed parcel information including zoning, jurisdiction, and APN.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedParcel && (
+            <div className="space-y-6 mt-4">
+              <ParcelMap lat={selectedParcel.lat} lng={selectedParcel.lng} address={selectedParcel.address} />
+              
+              <div className="flex gap-2">
+                <ShareButton onClick={() => alert(`Share ${selectedParcel.address}`)} />
+                <ExportPdfButton onClick={() => handleExportPdf(selectedParcel)} />
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Address</p>
+                  <p className="text-base font-semibold">{selectedParcel.address}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-500">APN</p>
+                  <p className="text-base">{selectedParcel.apn}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Jurisdiction</p>
+                    <p className="text-base">{selectedParcel.jurisdiction}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Zoning</p>
+                    <p className="text-base">{selectedParcel.zoning}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Latitude</p>
+                    <p className="text-base">{selectedParcel.lat}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Longitude</p>
+                    <p className="text-base">{selectedParcel.lng}</p>
+                  </div>
+                </div>
+
+                {selectedParcel.sources && selectedParcel.sources.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 mb-2">Sources</p>
+                    <ul className="space-y-1">
+                      {selectedParcel.sources.map((source, idx) => (
+                        <li key={idx} className="text-sm flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          {source}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {selectedParcel.notes && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 mb-2">Notes</p>
+                    <p className="text-sm bg-gray-50 p-3 rounded-md">{selectedParcel.notes}</p>
+                  </div>
+                )}
+
+                <div className="pt-4 flex gap-2">
+                  <Button className="flex-1" onClick={() => alert('Create Report')}>
+                    Create Report
+                  </Button>
+                  <Button variant="outline" className="flex-1" onClick={() => setSelectedParcel(null)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

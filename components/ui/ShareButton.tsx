@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from './button';
 import { Share2 } from 'lucide-react';
 

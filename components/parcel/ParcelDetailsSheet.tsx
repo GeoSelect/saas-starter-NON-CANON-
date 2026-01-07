@@ -1,3 +1,5 @@
+"use client";
+
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ParcelSnapshotDrawer } from "./ParcelSnapshotDrawer";
 import { ExportPdfButton } from "@/components/ui/ExportPdfButton";
