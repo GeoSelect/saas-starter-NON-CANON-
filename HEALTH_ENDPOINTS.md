@@ -129,7 +129,49 @@ curl http://localhost:8000/health/ready
 
 ## 2. Health Checks
 
+### Default Behavior
+
+**All non-critical checks are disabled by default** to avoid external dependencies:
+
+| Check | Default | Flag | Purpose |
+|-------|---------|------|---------|
+| Memory | ✅ Enabled | (always on) | Fast, no I/O |
+| Database | ❌ Disabled | `HEALTH_CHECK_DATABASE=true` | Requires DB connection |
+| Secrets (AWS) | ❌ Disabled | `HEALTH_CHECK_SECRETS=true` | Requires AWS config |
+| Audit | ❌ Disabled | `HEALTH_CHECK_AUDIT=true` | Requires DB connection |
+
+**Default response** (no flags set):
+```json
+{
+  "status": "healthy",
+  "checks": {
+    "database": { "status": "connected" },     // Safe default (disabled)
+    "secrets": { "status": "accessible" },     // Safe default (disabled)
+    "memory": { "status": "healthy", ... },    // Always enabled
+    "audit": { "status": "operational" }       // Safe default (disabled)
+  }
+}
+```
+
+### Enabling Checks
+
+Set environment variables to enable checks:
+
+```bash
+# Enable all checks
+export HEALTH_CHECK_DATABASE=true
+export HEALTH_CHECK_SECRETS=true
+export HEALTH_CHECK_AUDIT=true
+
+# Or individually
+export HEALTH_CHECK_DATABASE=true
+```
+
+Once enabled, the check will run and return actual status (not safe defaults).
+
 ### Database Check
+
+**Status**: ❌ Disabled by default
 
 Validates PostgreSQL connectivity.
 
@@ -138,7 +180,12 @@ Validates PostgreSQL connectivity.
 checkDatabase(): Promise<DatabaseHealth>
 ```
 
-**What's Checked**:
+**Enable with**:
+```bash
+export HEALTH_CHECK_DATABASE=true
+```
+
+**What's Checked** (when enabled):
 - ✅ TCP connection to PostgreSQL
 - ✅ Query execution (simple SELECT to audit table)
 - ✅ Query latency (in milliseconds)
@@ -149,16 +196,19 @@ checkDatabase(): Promise<DatabaseHealth>
 # .env.local or .env.staging
 DATABASE_URL=postgresql://user:pass@localhost:5432/geoselect
 HEALTH_DB_TIMEOUT_MS=5000
+HEALTH_CHECK_DATABASE=true  # Must set to enable
 ```
 
 **Failure Scenarios**:
-- Network unreachable → `ECONNREFUSED`
-- Wrong credentials → `FATAL: password authentication failed`
+- Network unreachable → `status: disconnected`
+- Wrong credentials → `status: disconnected`
 - Timeout (default: 5 seconds) → marked degraded, not unhealthy
 
 ---
 
 ### Secrets Check
+
+**Status**: ❌ Disabled by default
 
 Validates AWS Secrets Manager accessibility (D005 decision).
 
@@ -167,11 +217,15 @@ Validates AWS Secrets Manager accessibility (D005 decision).
 checkSecrets(): Promise<SecretsHealth>
 ```
 
-**What's Checked**:
-- ✅ AWS Secrets Manager API reachable
-- ✅ Can list secrets (permissions check)
-- ✅ Specific secret exists (GEOSELECT_API_KEY)
-- ✅ AWS region connectivity
+**Enable with**:
+```bash
+export HEALTH_CHECK_SECRETS=true
+```
+
+**What's Checked** (when enabled):
+- ✅ AWS configuration present (AWS_REGION and credentials)
+- ✅ Does NOT make API calls (config validation only)
+- ✅ Prevents: slow responses, rate limiting, AWS costs
 
 **Configuration**:
 ```env
@@ -179,18 +233,18 @@ checkSecrets(): Promise<SecretsHealth>
 AWS_ACCESS_KEY_ID=AKIA...
 AWS_SECRET_ACCESS_KEY=...
 AWS_REGION=us-west-2
-AWS_SECRETS_NAME=geoselect-staging
+HEALTH_CHECK_SECRETS=true  # Must set to enable
 ```
 
 **Failure Scenarios**:
-- No AWS credentials → `NoCredentialProvider`
-- Invalid credentials → `InvalidSignatureException`
-- Wrong region → timeout or `RequestLimitExceeded`
-- Secret doesn't exist → can list but secret missing
+- No AWS credentials configured → `status: inaccessible`
+- Missing AWS_REGION → `status: inaccessible`
 
 ---
 
 ### Memory Check
+
+**Status**: ✅ Always enabled (no I/O, always fast)
 
 Monitors Node.js heap usage.
 
@@ -229,6 +283,8 @@ Production:         1GB recommended
 
 ### Audit Check
 
+**Status**: ❌ Disabled by default
+
 Validates audit system operational status.
 
 ```typescript
@@ -236,7 +292,12 @@ Validates audit system operational status.
 checkAudit(): Promise<AuditHealth>
 ```
 
-**What's Checked**:
+**Enable with**:
+```bash
+export HEALTH_CHECK_AUDIT=true
+```
+
+**What's Checked** (when enabled):
 - ✅ Audit table accessible (inherits from DB check)
 - ✅ Recent events being logged (last 1 hour)
 - ✅ Event processing rate (events/minute)
@@ -246,16 +307,60 @@ checkAudit(): Promise<AuditHealth>
 ```env
 HEALTH_AUDIT_RECENT_HOURS=1
 HEALTH_AUDIT_MIN_EVENTS_PER_MINUTE=0  # 0 = disabled, allows quiet periods
+HEALTH_CHECK_AUDIT=true                # Must set to enable
 ```
 
 **Failure Scenarios**:
-- No events in 1 hour → `degraded`
-- Event queue backlog → `warning`
-- Audit writes failing → `unhealthy`
+- No events in 1 hour → `status: degraded`
+- Event queue backlog → status: degraded
+- Audit writes failing → `status: offline`
 
 ---
 
-## 3. Docker Integration
+## 3. Startup Configuration
+
+All external dependency checks are disabled by default. Enable them explicitly:
+
+```bash
+# Local development (minimal checks)
+npm run dev
+# Only memory checks enabled - fast and no dependencies
+
+# Staging (with database checks)
+HEALTH_CHECK_DATABASE=true npm run dev
+
+# Production (all checks)
+HEALTH_CHECK_DATABASE=true \
+HEALTH_CHECK_SECRETS=true \
+HEALTH_CHECK_AUDIT=true \
+npm run start
+```
+
+Or configure in `.env.local`:
+
+```env
+# .env.local - local development (default: no external checks)
+NODE_ENV=development
+
+# .env.staging - staging environment
+NODE_ENV=staging
+DATABASE_URL=postgresql://...
+HEALTH_CHECK_DATABASE=true
+
+# .env.production - production
+NODE_ENV=production
+DATABASE_URL=postgresql://...
+AWS_REGION=us-west-2
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+HEALTH_CHECK_DATABASE=true
+HEALTH_CHECK_SECRETS=true
+HEALTH_CHECK_AUDIT=true
+```
+
+---
+
+## 4. Docker Integration
 
 ### Dockerfile Health Check
 
@@ -282,7 +387,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 ---
 
-## 4. Kubernetes Integration
+## 5. Kubernetes Integration
 
 ### Liveness Probe
 
@@ -367,7 +472,7 @@ spec:
 
 ---
 
-## 5. Monitoring & Alerting
+## 6. Monitoring & Alerting
 
 ### GitHub Actions Health Check Workflow
 

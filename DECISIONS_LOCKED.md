@@ -24,35 +24,39 @@
 - Health checks: curl docker spine container
 - Seed strategy: Direct database access via docker-compose exec
 
-### D002/D019: Docker Registry
-**Decision**: `ecr` (AWS ECR)
+### D002: Docker Registry
+**Decision**: `do-container-registry` (DigitalOcean Container Registry)
 
 **Why**:
-- Private registry (not public Docker Hub)
-- AWS integration (already using AWS for secrets)
-- Cost-effective at our scale
-- Security: fine-grained IAM access control
+- Private registry, managed by DigitalOcean
+- Integrates seamlessly with DO App Platform (automatic pull)
+- Cost-effective (included with DO Spaces)
+- No AWS dependency (using DO for everything)
+- Simple authentication (DO API tokens)
 
 **Implications**:
-- GitHub Actions needs AWS credentials for push
-- Image pull in staging/prod uses IAM role
-- Registry URL: `123456789.dkr.ecr.us-east-1.amazonaws.com/geoselect-app`
-- Buildcache: ECR-backed (faster rebuilds)
+- GitHub Actions uses DO API token (GitHub Secret)
+- Image push: `docker push registry.digitalocean.com/geoselect/api:latest`
+- Image pull in DO App Platform: automatic (same account)
+- Buildcache: DO-backed (faster rebuilds)
+- No AWS IAM configuration needed
 
 ### D005: Secrets Management
-**Decision**: `aws-secrets` (AWS Secrets Manager)
+**Decision**: `platform-env-vars` (Vercel + DO App Platform Environment Variables)
 
 **Why**:
-- Centralized secret management
-- Automatic rotation support
-- AWS audit logs (CloudTrail)
-- Works with both local (AWS CLI) and CI/CD (IAM role)
+- No external dependencies (AWS removed)
+- Vercel and DO both handle secrets natively in UI
+- Simple: just set env vars in platform dashboard
+- Automatic injection at runtime
+- Different secrets per environment (staging vs production)
 
 **Implications**:
-- Local dev: `aws secretsmanager get-secret-value` 
-- CI/CD: GitHub Actions IAM role has GetSecretValue permission
-- .env.local loads secrets from AWS on startup
-- Seed script loads database credentials from AWS
+- Vercel (Frontend): Settings → Environment Variables
+- DO App Platform (Backend): Settings → Environment Variables
+- Local dev: .env.local with test/fake values
+- CI/CD: GitHub Secrets → docker build args → runtime env vars
+- No AWS SDK needed, no secret rotation complexity
 
 ### D020: Seed Strategy
 **Decision**: `sql-script` (Direct SQL seeding)
@@ -73,74 +77,54 @@
 
 ## Decision Lock Summary
 
-| Decision | Value | Locked? | Injection Status |
-|----------|-------|---------|------------------|
-| D001 | docker | ✅ Yes | Ready to inject |
-| D002 | ecr | ✅ Yes | Ready to inject |
-| D005 | aws-secrets | ✅ Yes | Ready to inject |
-| D020 | sql-script | ✅ Yes | Ready to inject |
+| Decision | Value | Locked? | Status |
+|----------|-------|---------|--------|
+| D001 | docker | ✅ Yes | Active |
+| D002 | do-container-registry | ✅ Yes | Active (updated from ecr) |
+| D005 | platform-env-vars | ✅ Yes | Active (updated from aws-secrets) |
+| D020 | sql-script | ✅ Yes | Active |
+
+---
+
+## Latest Changes (AWS Removal)
+
+**Updated 2026-01-07 (Post-Phase-2)**:
+- ✅ D002: Changed from `ecr` → `do-container-registry`
+  - Rationale: Using DigitalOcean for everything; no AWS needed
+  - Impact: CI/CD pushes to DO registry instead of AWS ECR
+  
+- ✅ D005: Changed from `aws-secrets` → `platform-env-vars`
+  - Rationale: Vercel + DO App Platform handle env vars natively
+  - Impact: Removed AWS SDK, API calls, and complexity
+  - Removed: AWS credentials, IAM roles, secret rotation
+  - Simplified: Just set env vars in platform UI
 
 ---
 
 ## Next Step
 
-Run the injection script to replace all `${DECISION_PARAMETER}` placeholders with these concrete values in PR-2, PR-3, PR-4:
+All decisions are locked and executed. Phase 1 scaffolding is production-ready with DO/Vercel stack.
+
+To deploy:
+1. **Frontend**: Push to GitHub → Vercel auto-deploys, set env vars in Vercel dashboard
+2. **Backend**: Push to GitHub → GitHub Actions builds Docker image → pushes to DO Container Registry → DO App Platform auto-deploys
+3. **Database**: Create DO Managed PostgreSQL cluster, set connection string in DO App Platform env vars
+4. **Cache**: Create DO Managed Redis cluster, set connection string in DO App Platform env vars
+5. **Storage**: Create DO Spaces bucket, set credentials in DO App Platform env vars
+
+---
+
+## Verification
+
+After Phase 1 completion, verify no AWS references remain:
 
 ```bash
-./scripts/inject-decisions.sh \
-  --backend-hosting docker \
-  --docker-registry ecr \
-  --secrets-backend aws-secrets \
-  --seed-strategy sql-script \
-  --apply
+# Should find nothing
+grep -r "aws-secrets\|AWS_\|ecr\|IAM\|ECR" . --exclude-dir=node_modules --exclude-dir=.git || echo "✅ No AWS references found"
 
-# Output:
-# ✅ Injecting decisions into Phase 1 PRs...
-# ✅ Replaced ${D001_BACKEND_HOSTING} → docker
-# ✅ Replaced ${D002_DOCKER_REGISTRY} → ecr
-# ✅ Replaced ${D005_SECRETS_BACKEND} → aws-secrets
-# ✅ Replaced ${D020_SEED_STRATEGY} → sql-script
-# ✅ Updated .github/workflows/deploy.yml
-# ✅ Updated .env.local.example
-# ✅ Updated scripts/seed.ts
-# ✅ Updated package.json
-# ✅ All injections complete. Ready to merge PR-2, PR-3, PR-4.
+# Should find DO references
+grep -r "do-container-registry\|DigitalOcean\|platform-env-vars" . --exclude-dir=node_modules --exclude-dir=.git || echo "✅ DO references found"
 ```
-
----
-
-## Verification Before Merge
-
-After injection, verify files have real values (not placeholders):
-
-```bash
-# Check no placeholders remain
-grep -r '\${D0[0-9][0-9]' .github/workflows/ scripts/ || echo "✅ No parameters found"
-
-# Verify specific values are injected
-grep "docker" .github/workflows/deploy.yml && echo "✅ docker found in deploy"
-grep "ecr" .github/workflows/deploy.yml && echo "✅ ecr found in deploy"
-grep "aws-secrets" .env.local.example && echo "✅ aws-secrets found in env"
-grep "sql-script" scripts/seed.ts && echo "✅ sql-script found in seed"
-```
-
----
-
-## Timeline
-
-- ✅ **Decisions made**: 30 min (you, solo)
-- ⏳ **Injection script**: 15 min (automated)
-- ⏳ **Verify + merge**: 15 min (manual review)
-- **Total**: ~1 hour from now to production-ready scaffolding
-
----
-
-## Important Notes
-
-- These decisions are **not reversible without re-injection**. If you change your mind on docker/ecr/aws-secrets/sql-script, run injection again with new values.
-- The injection script is **idempotent**. You can run it multiple times with the same decision values (safe).
-- When person 2 arrives, they'll see this decision lock and understand what was chosen and why.
-- When team hits 6 people, the injection script becomes your process for propagating any future architecture decisions.
 
 ---
 
