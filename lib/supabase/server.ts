@@ -59,3 +59,9 @@ export async function supabaseRoute() {
  * Alias for supabaseRoute() - same implementation needed.
  */
 export const supabaseAction = supabaseRoute;
+
+/**
+ * Alias for backward compatibility
+ * @deprecated Use supabaseRoute() instead
+ */
+export const createClient = supabaseRoute;

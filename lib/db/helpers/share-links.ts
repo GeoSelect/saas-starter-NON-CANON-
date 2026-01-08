@@ -1,6 +1,6 @@
-// import removed: createClient is not exported from supabase/server
 import { v4 as uuid } from 'uuid';
 import crypto from 'crypto';
+import { supabaseRoute } from '@/lib/supabase/server';
 
 /**
  * Share Links Helper Functions

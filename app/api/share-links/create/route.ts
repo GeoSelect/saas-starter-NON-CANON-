@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createShareLink } from '@/lib/db/helpers/share-links';
-import { supabaseRoute } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { getEntitlementStatus } from '@/lib/services/entitlements';
 import { logShareLinkCreated } from '@/lib/helpers/activity-logger';
 
@@ -34,7 +34,7 @@ import { logShareLinkCreated } from '@/lib/helpers/activity-logger';
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate user
-    const supabase = await supabaseRoute();
+    const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
