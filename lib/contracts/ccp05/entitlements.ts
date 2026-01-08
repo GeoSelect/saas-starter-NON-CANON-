@@ -147,7 +147,7 @@ export const TIER_REQUIREMENTS: Record<EntitlementFeature, SubscriptionTier> = {
   'ccp-07:audit-logging': 'free',
   'ccp-08:saved-parcels': 'pro',
   'ccp-09:contact-upload': 'pro_plus',
-  'ccp-10:collaboration': 'pro_plus',
+  'ccp-10:collaboration': 'portfolio', // Updated to Portfolio tier per CCP-10 integration requirements
   'ccp-11:events': 'pro_plus',
   'ccp-12:sharing': 'free',
   'ccp-14:premium-features': 'pro',

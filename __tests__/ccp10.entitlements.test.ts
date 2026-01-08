@@ -2,33 +2,33 @@ import { describe, it, expect } from 'vitest';
 import { TIER_REQUIREMENTS, TIER_ORDER, isTierSufficient, getMinimumTierFor } from '../lib/contracts/ccp05/entitlements';
 
 describe('CCP-10 Entitlement Configuration', () => {
-  it('CCP-10 is mapped to pro_plus tier', () => {
+  it('CCP-10 is mapped to portfolio tier', () => {
     const ccp10Tier = TIER_REQUIREMENTS['ccp-10:collaboration'];
-    expect(ccp10Tier).toBe('pro_plus');
-  });
-
-  it('pro_plus tier is sufficient for CCP-10', () => {
-    const isAllowed = isTierSufficient('pro_plus', 'pro_plus');
-    expect(isAllowed).toBe(true);
+    expect(ccp10Tier).toBe('portfolio');
   });
 
   it('portfolio tier is sufficient for CCP-10', () => {
-    const isAllowed = isTierSufficient('portfolio', 'pro_plus');
+    const isAllowed = isTierSufficient('portfolio', 'portfolio');
     expect(isAllowed).toBe(true);
   });
 
   it('enterprise tier is sufficient for CCP-10', () => {
-    const isAllowed = isTierSufficient('enterprise', 'pro_plus');
+    const isAllowed = isTierSufficient('enterprise', 'portfolio');
     expect(isAllowed).toBe(true);
   });
 
   it('free tier is NOT sufficient for CCP-10', () => {
-    const isAllowed = isTierSufficient('free', 'pro_plus');
+    const isAllowed = isTierSufficient('free', 'portfolio');
     expect(isAllowed).toBe(false);
   });
 
   it('pro tier is NOT sufficient for CCP-10', () => {
-    const isAllowed = isTierSufficient('pro', 'pro_plus');
+    const isAllowed = isTierSufficient('pro', 'portfolio');
+    expect(isAllowed).toBe(false);
+  });
+
+  it('pro_plus tier is NOT sufficient for CCP-10', () => {
+    const isAllowed = isTierSufficient('pro_plus', 'portfolio');
     expect(isAllowed).toBe(false);
   });
 
@@ -41,7 +41,7 @@ describe('CCP-10 Entitlement Configuration', () => {
 
   it('getMinimumTierFor returns correct tier for CCP-10', () => {
     const minTier = getMinimumTierFor('ccp-10:collaboration');
-    expect(minTier).toBe('pro_plus');
+    expect(minTier).toBe('portfolio');
   });
 
   it('CCP-12 (basic sharing) requires free tier', () => {

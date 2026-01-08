@@ -90,8 +90,11 @@ export interface EntitlementCheckAuth {
  * Check if a user has a specific entitlement capability
  * Used in API routes to gate access to premium features
  * 
+ * Note: This is a simplified implementation that checks authentication and workspace access.
+ * For more sophisticated entitlement checks, use getEntitlementStatus() directly.
+ * 
  * @param request - Next.js request object
- * @param capability - The capability to check (e.g., "can_resolve_parcels", "can_share_collaboration")
+ * @param capability - The capability to check (for future use, currently not enforced)
  * @returns Auth object if allowed, null if denied
  */
 export async function requireEntitlement(
@@ -150,8 +153,9 @@ export async function requireEntitlement(
       return null;
     }
 
-    // For now, return allowed (capability checking can be added later)
-    // This is a basic implementation that checks auth and workspace access
+    // Note: Capability-based entitlement checking should be implemented here
+    // For now, this function provides basic auth + workspace verification
+    // Specific entitlement checks (like CCP-10) should use getEntitlementStatus() directly
     return {
       userId: user.id,
       workspaceId,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createShareLink } from '@/lib/db/helpers/share-links';
-import { createClient } from '@/lib/supabase/server';
+import { supabaseRoute } from '@/lib/supabase/server';
 import { getEntitlementStatus } from '@/lib/services/entitlements';
 import { logShareLinkCreated } from '@/lib/helpers/activity-logger';
 
@@ -34,7 +34,7 @@ import { logShareLinkCreated } from '@/lib/helpers/activity-logger';
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate user
-    const supabase = await createClient();
+    const supabase = await supabaseRoute();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -133,7 +133,8 @@ export async function POST(request: NextRequest) {
     );
 
     // 6. Log activity (best-effort, non-blocking)
-    const tokenPrefix = shareLink.token ? shareLink.token.substring(0, 8) : 'unknown';
+    // Use only first 4 characters of token for forensic tracking without exposing too much
+    const tokenPrefix = shareLink.token ? shareLink.token.substring(0, 4) : 'unknown';
     logShareLinkCreated(
       user.id,
       workspace_id,
