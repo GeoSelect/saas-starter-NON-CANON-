@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/complete-happy-path
   workflow_dispatch:
 
 jobs:
