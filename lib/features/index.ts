@@ -23,7 +23,8 @@ export type FeatureId =
   | 'custom-reports'
   | 'team-collaboration'
   | 'white-label'
-  | 'audit-trail';
+  | 'audit-trail'
+  | 'share-link-management'; // CCP-10
 
 export interface Feature {
   id: FeatureId;
@@ -159,7 +160,14 @@ export const FEATURES: Record<FeatureId, Feature> = {
     name: 'Team Collaboration',
     description: 'Share workspaces, assign tasks, and collaborate with team members',
     category: 'admin',
-    minPlanRequired: 'pro-workspace',
+    minPlanRequired: 'portfolio', // Updated to align with CCP-10 in Portfolio
+  },
+  'share-link-management': {
+    id: 'share-link-management',
+    name: 'Advanced Share Links',
+    description: 'Role-based share links with time limits, recipient tracking, and audit trails (CCP-10)',
+    category: 'admin',
+    minPlanRequired: 'portfolio',
   },
   'white-label': {
     id: 'white-label',
@@ -173,7 +181,7 @@ export const FEATURES: Record<FeatureId, Feature> = {
     name: 'Audit Trail',
     description: 'View complete activity logs and user actions',
     category: 'admin',
-    minPlanRequired: 'pro-workspace',
+    minPlanRequired: 'portfolio', // Updated to align with Portfolio plan
   },
 };
 
@@ -349,6 +357,7 @@ export const FEATURE_MATRIX: Record<PlanType, FeatureId[]> = {
     'ai-insights',
     'api-access',
     'team-collaboration',
+    'share-link-management', // CCP-10
     'white-label',
     'audit-trail',
   ],

@@ -225,9 +225,9 @@ export const FEATURE_DESCRIPTIONS: Record<EntitlementFeature, string> = {
   'ccp-07:audit-logging': 'Access audit logs and compliance records',
   'ccp-08:saved-parcels': 'Save and bookmark parcels for later',
   'ccp-09:contact-upload': 'Import contacts via CSV',
-  'ccp-10:collaboration': 'Collaborate with team members',
+  'ccp-10:collaboration': 'Advanced collaboration: role-based share links, time limits, recipient tracking, and audit trails',
   'ccp-11:events': 'Track and manage events',
-  'ccp-12:sharing': 'Share reports and parcels with others',
+  'ccp-12:sharing': 'Basic sharing of reports and parcels',
   'ccp-14:premium-features': 'Access premium features and tools',
   'ccp-15:export': 'Export data in various formats',
 };
