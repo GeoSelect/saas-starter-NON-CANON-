@@ -1,0 +1,47 @@
+{
+  "files.exclude": {
+    "**/.env.local": false,
+    "**/.env": false
+  },
+  "files.watcherExclude": {
+    "**/.env.local": true,
+    "**/.env": true
+  },
+  "search.exclude": {
+    "**/.env.local": true,
+    "**/.env": true,
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/build": true,
+    "**/dist": true
+  },
+  "dotenv.enableAutocloaking": false,
+  "[dotenv]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
+  "files.associations": {
+    "*.env": "dotenv",
+    ".env.*": "dotenv"
+  },
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "workbench.colorCustomizations": {
+    "[Default Dark+]": {
+      "tab.activeBorder": "#ff0000",
+      "statusBar.background": "#ff0000",
+      "statusBar.noFolderBackground": "#ff0000"
+    }
+  },
+  "workbench.settings.enableNaturalLanguageSearch": false,
+  "security.workspace.trust.enabled": true,
+  "security.workspace.trust.untrustedFiles": "prompt",
+  "git.ignoreLimitWarning": true,
+  "git.confirmSync": false,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true
+}
