@@ -195,7 +195,7 @@ BEGIN
     (NEW.id, 'ccp-07:audit-logging', 'free', true, NULL),
     (NEW.id, 'ccp-08:saved-parcels', 'pro', false, 'TIER_INSUFFICIENT'),
     (NEW.id, 'ccp-09:contact-upload', 'pro_plus', false, 'TIER_INSUFFICIENT'),
-    (NEW.id, 'ccp-10:collaboration', 'pro_plus', false, 'TIER_INSUFFICIENT'),
+    (NEW.id, 'ccp-10:collaboration', 'portfolio', false, 'TIER_INSUFFICIENT'),
     (NEW.id, 'ccp-11:events', 'pro_plus', false, 'TIER_INSUFFICIENT'),
     (NEW.id, 'ccp-12:sharing', 'free', true, NULL),
     (NEW.id, 'ccp-14:premium-features', 'pro', false, 'TIER_INSUFFICIENT'),
