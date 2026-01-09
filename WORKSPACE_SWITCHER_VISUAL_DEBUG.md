@@ -332,13 +332,13 @@ ORDER BY created_at DESC LIMIT 10;
 
 ```bash
 # Grep for auth errors
-npm run dev 2>&1 | grep "\[AUTH\]"
+pnpm dev 2>&1 | grep "\[AUTH\]"
 
 # Watch specific user
-npm run dev 2>&1 | grep "USER_ID"
+pnpm dev 2>&1 | grep "USER_ID"
 
 # Watch all errors
-npm run dev 2>&1 | grep -E "\[ERROR\]|\[WARN\]"
+pnpm dev 2>&1 | grep -E "\[ERROR\]|\[WARN\]"
 ```
 
 ## Healthy System Indicators

@@ -179,7 +179,7 @@ interface Report {
 
 ### Test Execution
 ```bash
-npm test -- ccp06.integration.test.ts
+pnpm test -- ccp06.integration.test.ts
 # Result: 65 tests passed, 0 failed
 ```
 

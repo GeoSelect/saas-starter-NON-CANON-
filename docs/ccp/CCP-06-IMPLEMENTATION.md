@@ -410,7 +410,7 @@ export async function DELETE(request, {params}): Promise<NextResponse>
 
 ### Pre-Deployment (Dev Environment)
 
-- [ ] Run tests: `npm test -- ccp06.integration.test.ts`
+- [ ] Run tests: `pnpm test -- ccp06.integration.test.ts`
 - [ ] Run linting: `npm run lint`
 - [ ] Apply migration: `supabase migration up --attached`
 - [ ] Verify RLS policies in Supabase dashboard

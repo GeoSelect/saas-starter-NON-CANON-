@@ -285,7 +285,7 @@ psql -U postgres -d your_database < db/migrations/001_create_workspace_schema.sq
 
 ### 2. Package Dependencies
 ```bash
-npm install recharts  # For dashboard charts
+pnpm install recharts  # For dashboard charts
 ```
 
 ### 3. Environment Variables

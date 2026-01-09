@@ -215,12 +215,12 @@ CACHE_TTL_SECONDS=300
 
 ### Unit Tests
 ```bash
-npm test -- tests/services/entitlements.test.ts
+pnpm test -- tests/services/entitlements.test.ts
 ```
 
 ### Integration Tests
 ```bash
-npm test -- tests/integration/stripe-entitlements.test.ts
+pnpm test -- tests/integration/stripe-entitlements.test.ts
 ```
 
 ### CI/CD

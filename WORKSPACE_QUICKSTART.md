@@ -446,7 +446,7 @@ export default function WorkspaceNav({ workspace }: any) {
 ## 10. Important Setup Steps
 
 1. **Run database migration**: Execute `db/migrations/001_create_workspace_schema.sql`
-2. **Install recharts**: `npm install recharts`
+2. **Install recharts**: `pnpm install recharts`
 3. **Configure auth**: Ensure Supabase auth is set up
 4. **Set environment variables**: Update `.env.local` with your Supabase URL and key
 5. **Test endpoints**: Use Postman/Insomnia to test API endpoints

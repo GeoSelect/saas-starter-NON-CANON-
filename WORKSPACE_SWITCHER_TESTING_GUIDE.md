@@ -25,7 +25,7 @@ User selects workspace in dropdown
 ## Manual Testing (Start Here)
 
 ### Setup
-1. Start your dev server: `npm run dev`
+1. Start your dev server: `pnpm dev`
 2. Log in with a test account
 3. Ensure you have at least 2 workspaces
 
@@ -526,7 +526,7 @@ When something doesn't work, check:
 tail -f logs/auth.log | grep "\[AUTH\]"
 
 # Watch all logs
-npm run dev 2>&1 | grep -E "\[AUTH\]|\[ERROR\]"
+pnpm dev 2>&1 | grep -E "\[AUTH\]|\[ERROR\]"
 ```
 
 ### Browser Console (Client Side)

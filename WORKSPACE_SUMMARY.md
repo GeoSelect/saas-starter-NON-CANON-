@@ -139,7 +139,7 @@ psql -f db/migrations/001_create_workspace_schema.sql
 
 ### 2. Install Dependencies
 ```bash
-npm install recharts  # For dashboard charts
+pnpm install recharts  # For dashboard charts
 ```
 
 ### 3. Create Routes
