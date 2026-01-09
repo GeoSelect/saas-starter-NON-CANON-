@@ -6,10 +6,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// GET /api/workspaces/[id]/members - Get workspace members
+// GET /api/workspaces/[workspace_id]/members - Get workspace members
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { workspace_id: string } }
 ) {
   try {
     const {
@@ -22,7 +22,7 @@ export async function GET(
     }
 
     const userId = session.user.id;
-    const workspaceId = params.id;
+    const workspaceId = params.workspace_id;
 
     // Check if user has access
     const { data: workspace } = await supabase
@@ -72,10 +72,10 @@ export async function GET(
   }
 }
 
-// POST /api/workspaces/[id]/invite - Invite user to workspace
+// POST /api/workspaces/[workspace_id]/invite - Invite user to workspace
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { workspace_id: string } }
 ) {
   try {
     const {
@@ -88,7 +88,7 @@ export async function POST(
     }
 
     const userId = session.user.id;
-    const workspaceId = params.id;
+    const workspaceId = params.workspace_id;
     const { email, role = 'member' } = await request.json();
 
     // Check if user is workspace owner
@@ -173,10 +173,10 @@ export async function POST(
   }
 }
 
-// PATCH /api/workspaces/[id]/members/[userId] - Update member role
+// PATCH /api/workspaces/[workspace_id]/members/[userId] - Update member role
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; userId: string } }
+  { params }: { params: { workspace_id: string; userId: string } }
 ) {
   try {
     const {
@@ -189,7 +189,7 @@ export async function PATCH(
     }
 
     const userId = session.user.id;
-    const workspaceId = params.id;
+    const workspaceId = params.workspace_id;
     const memberId = params.userId;
     const { role } = await request.json();
 
@@ -239,10 +239,10 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/workspaces/[id]/members/[userId] - Remove member from workspace
+// DELETE /api/workspaces/[workspace_id]/members/[userId] - Remove member from workspace
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; userId: string } }
+  { params }: { params: { workspace_id: string; userId: string } }
 ) {
   try {
     const {
@@ -255,7 +255,7 @@ export async function DELETE(
     }
 
     const userId = session.user.id;
-    const workspaceId = params.id;
+    const workspaceId = params.workspace_id;
     const memberId = params.userId;
 
     // Check if user is owner
