@@ -1,0 +1,317 @@
+{
+  "version": "1.0",
+  "description": "GIS Data Sources Registry for Demo and Development",
+  "lastUpdated": "2026-01-07",
+  "datasets": [
+    {
+      "id": "san-miguel-county-parcels",
+      "name": "San Miguel County Tax Parcels",
+      "type": "Tax Parcels",
+      "location": "San Miguel County, Colorado, USA",
+      "description": "San Miguel County Colorado tax parcels for representing general locations and relative positions. Accuracy, source and quality varies. Attribute data is obtained from the Assessor's database on a regular basis.",
+      "owner": "San Miguel County Colorado GIS Department",
+      "sourceUrl": "https://www.arcgis.com/home/item.html?id=eea65c8c64fd40919fc8bed6678c7901&sublayer=0",
+      "access": {
+        "public": true,
+        "authentication": "none",
+        "tokenRequired": false
+      },
+      "services": {
+        "featureServer": {
+          "url": "https://services.arcgis.com/aXqye4IXyXsdIpPb/arcgis/rest/services/TaxParcelsPublic/FeatureServer/0",
+          "type": "FeatureServer",
+          "layer": 0
+        },
+        "mapServer": {
+          "url": "https://services.arcgis.com/aXqye4IXyXsdIpPb/arcgis/rest/services/TaxParcelsPublic/MapServer",
+          "type": "MapServer"
+        }
+      },
+      "geometry": {
+        "type": "Polygon",
+        "spatialReference": {
+          "wkid": 4326,
+          "latestWkid": 4326
+        }
+      },
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "description": "Unique object identifier (primary key)"
+        },
+        {
+          "name": "APN",
+          "type": "esriFieldTypeString",
+          "description": "Assessor Parcel Number - unique identifier for tax parcels"
+        },
+        {
+          "name": "ADDRESS",
+          "type": "esriFieldTypeString",
+          "description": "Street address of the parcel"
+        },
+        {
+          "name": "OWNER",
+          "type": "esriFieldTypeString",
+          "description": "Property owner name"
+        },
+        {
+          "name": "ACREAGE",
+          "type": "esriFieldTypeDouble",
+          "description": "Parcel size in acres"
+        }
+      ],
+      "extent": {
+        "xmin": -108.5,
+        "ymin": 38.0,
+        "xmax": -108.3,
+        "ymax": 38.2,
+        "spatialReference": {
+          "wkid": 4326
+        }
+      },
+      "metadata": {
+        "dateUpdated": "2026-01-07T00:00:00Z",
+        "dataLastUpdated": "2026-01-06T22:47:00Z",
+        "schemaUpdated": "2026-01-07T00:00:00Z"
+      },
+      "queryExamples": {
+        "allFeatures": "/query?where=1=1&outFields=*&returnGeometry=false&f=json&resultRecordCount=10",
+        "byObjectId": "/query?where=OBJECTID=1&outFields=*&returnGeometry=true&f=json",
+        "byAPN": "/query?where=APN='12-34-567'&outFields=*&returnGeometry=true&f=json",
+        "withGeometry": "/query?where=1=1&outFields=*&returnGeometry=true&geometryPrecision=6&f=json"
+      },
+      "status": "active",
+      "demoReady": true,
+      "notes": "Real Colorado parcel data, fresh as of Jan 6, 2026. Perfect for demo and development."
+    },
+    {
+      "id": "san-miguel-county-open-data-hub",
+      "name": "San Miguel County Open Data Hub - Maps & Data",
+      "type": "Multi-layer (Various)",
+      "location": "San Miguel County, Colorado, USA",
+      "description": "Official San Miguel County open data hub providing access to multiple GIS datasets and maps including parcels, zoning, infrastructure, and more.",
+      "owner": "San Miguel County GIS/IT Department",
+      "sourceUrl": "https://data-hub-sanmiguelco.opendata.arcgis.com/",
+      "access": {
+        "public": true,
+        "authentication": "none",
+        "tokenRequired": false
+      },
+      "services": {
+        "openDataHub": {
+          "url": "https://data-hub-sanmiguelco.opendata.arcgis.com/",
+          "type": "ArcGIS Open Data Hub",
+          "description": "Browse all available datasets and maps"
+        },
+        "specificMap": {
+          "url": "https://data-hub-sanmiguelco.opendata.arcgis.com/maps/dda57464f4f64b38af5ad30da132fdd1",
+          "type": "Web Map",
+          "description": "Specific map view (inspect to get layer URLs)"
+        }
+      },
+      "geometry": {
+        "type": "Various (Polygon, Point, Line)",
+        "spatialReference": {
+          "wkid": 4326
+        }
+      },
+      "fields": [
+        {
+          "name": "Variable",
+          "type": "Variable by layer",
+          "description": "Each dataset/layer has its own field structure"
+        }
+      ],
+      "extent": {
+        "xmin": -108.5,
+        "ymin": 38.0,
+        "xmax": -108.3,
+        "ymax": 38.2,
+        "spatialReference": {
+          "wkid": 4326
+        }
+      },
+      "metadata": {
+        "lastUpdated": "2026-01-07T00:00:00Z",
+        "description": "Maintained by San Miguel County IT/GIS"
+      },
+      "status": "active",
+      "demoReady": false,
+      "notes": "Official source for San Miguel County data. Browse hub to discover available layers and get specific Feature Server URLs.",
+      "discoverySteps": [
+        "1. Visit https://data-hub-sanmiguelco.opendata.arcgis.com/",
+        "2. Click 'Data' to browse all datasets",
+        "3. Click 'Maps' to browse all maps and views",
+        "4. Open desired map/dataset",
+        "5. Right-click layer in legend → 'View item details' to get Feature Server URL",
+        "6. Add new entry to this registry with discovered URL"
+      ]
+    },
+    {
+      "id": "placeholder-county-parcels",
+      "name": "County Parcel Template (Replace with your data)",
+      "type": "Tax Parcels",
+      "location": "Your County, Your State",
+      "description": "Template for adding additional county parcel datasets",
+      "owner": "County GIS Department",
+      "sourceUrl": "https://arcgis.com/home/item.html?id=your-item-id",
+      "access": {
+        "public": true,
+        "authentication": "none",
+        "tokenRequired": false
+      },
+      "services": {
+        "featureServer": {
+          "url": "https://services.arcgis.com/your-org/arcgis/rest/services/YourDataset/FeatureServer/0",
+          "type": "FeatureServer",
+          "layer": 0
+        },
+        "mapServer": {
+          "url": "https://services.arcgis.com/your-org/arcgis/rest/services/YourDataset/MapServer",
+          "type": "MapServer"
+        }
+      },
+      "geometry": {
+        "type": "Polygon",
+        "spatialReference": {
+          "wkid": 4326
+        }
+      },
+      "extent": {
+        "xmin": -105.0,
+        "ymin": 39.0,
+        "xmax": -104.0,
+        "ymax": 40.0,
+        "spatialReference": {
+          "wkid": 4326
+        }
+      },
+      "status": "template",
+      "demoReady": false,
+      "notes": "Copy and customize this entry for additional datasets"
+    },
+    {
+      "id": "san-miguel-county-addresses",
+      "name": "San Miguel County Addresses - Structure Points",
+      "type": "Address Points",
+      "location": "San Miguel County, Colorado, USA",
+      "description": "Approximate location of structures (buildings) in San Miguel County Colorado. Points are generally placed at the visual center of buildings as observed on aerial photography, located on site plans, or captured with GPS equipment. Includes address information, owner name, parcel ID, and community classification.",
+      "owner": "San Miguel County GIS Department",
+      "sourceUrl": "https://data-hub-sanmiguelco.opendata.arcgis.com/datasets/ccce2230e5a540b8b418bcb105978e13_5/explore",
+      "access": {
+        "public": true,
+        "authentication": "none",
+        "tokenRequired": false
+      },
+      "services": {
+        "featureServer": {
+          "url": "https://services.arcgis.com/aXqye4IXyXsdIpPb/ArcGIS/rest/services/Addresses_Public/FeatureServer/0",
+          "type": "FeatureServer",
+          "layer": 0,
+          "layerName": "Structure (address)"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "spatialReference": {
+          "wkid": 102100,
+          "latestWkid": 3857,
+          "description": "Web Mercator"
+        }
+      },
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "description": "Unique object identifier"
+        },
+        {
+          "name": "FSAN",
+          "type": "esriFieldTypeString",
+          "description": "Full Site Address Number (display field)"
+        },
+        {
+          "name": "FSA",
+          "type": "esriFieldTypeString",
+          "description": "Full Street Address"
+        },
+        {
+          "name": "NAME1",
+          "type": "esriFieldTypeString",
+          "description": "Owner Name"
+        },
+        {
+          "name": "PIN",
+          "type": "esriFieldTypeString",
+          "description": "Parcel ID (links to parcel layer)"
+        },
+        {
+          "name": "MCN",
+          "type": "esriFieldTypeString",
+          "description": "MSAG Community (city/town)"
+        },
+        {
+          "name": "LAT",
+          "type": "esriFieldTypeDouble",
+          "description": "Latitude"
+        },
+        {
+          "name": "LON",
+          "type": "esriFieldTypeDouble",
+          "description": "Longitude"
+        }
+      ],
+      "extent": {
+        "xmin": -12137910.9841,
+        "ymin": 4552063.9866,
+        "xmax": -11996847.6086,
+        "ymax": 4613682.9088,
+        "spatialReference": {
+          "wkid": 102100
+        }
+      },
+      "metadata": {
+        "lastUpdated": "2026-01-07T00:00:00Z",
+        "recordCount": 2000,
+        "maxRecordCount": 2000
+      },
+      "queryExamples": {
+        "allFeatures": "/query?where=1=1&outFields=OBJECTID,FSAN,FSA,NAME1,PIN,MCN,LAT,LON&returnGeometry=true&f=json&resultRecordCount=10",
+        "byObjectId": "/query?where=OBJECTID=1&outFields=*&returnGeometry=true&f=json",
+        "byAddress": "/query?where=FSA LIKE '%Main St%'&outFields=*&returnGeometry=true&f=json"
+      },
+      "status": "active",
+      "demoReady": true,
+      "notes": "Verified Feature Server URL extracted from ArcGIS service directory. Point layer linked to parcel data via PIN field. Uses Web Mercator (EPSG:3857) projection. Max 2000 records per query.",
+      "relatedLayers": [
+        "san-miguel-county-parcels (linked via PIN field)"
+      ]
+    },
+  ],
+  "demoConfiguration": {
+    "primary": "san-miguel-county-parcels",
+    "fallback": "placeholder-county-parcels",
+    "environment": {
+      "ESRI_FEATURE_SERVICE_URL": "https://services.arcgis.com/aXqye4IXyXsdIpPb/arcgis/rest/services/TaxParcelsPublic/FeatureServer/0",
+      "ESRI_MAP_SERVICE_URL": "https://services.arcgis.com/aXqye4IXyXsdIpPb/arcgis/rest/services/TaxParcelsPublic/MapServer",
+      "ESRI_API_KEY": ""
+    }
+  },
+  "instructions": {
+    "adding_new_dataset": [
+      "1. Get ArcGIS Online item ID from your dataset",
+      "2. Fetch layer metadata from FeatureServer/0?f=json",
+      "3. Copy the placeholder entry above",
+      "4. Fill in all required fields (url, fields, extent)",
+      "5. Set status='active' and demoReady=true when ready",
+      "6. Update environment variables in demoConfiguration if making it primary"
+    ],
+    "testing_dataset": [
+      "1. Copy the Feature Server URL",
+      "2. Run: curl 'URL/query?where=1=1&outFields=*&returnGeometry=false&f=json&resultRecordCount=1'",
+      "3. Verify response has features and no error field",
+      "4. Run test-demo-pipeline.sh with the dataset URLs"
+    ]
+  }
+}

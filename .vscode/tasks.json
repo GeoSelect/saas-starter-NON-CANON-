@@ -1,0 +1,47 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build app for production",
+			"type": "shell",
+			"command": "pnpm build"
+		},
+		{
+			"label": "Run all tests",
+			"type": "shell",
+			"command": "pnpm test"
+		},
+		{
+			"label": "Build project",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"build"
+			]
+		},
+		{
+			"label": "Test project",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"test"
+			]
+		},
+		{
+			"label": "Build project",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"build"
+			]
+		},
+		{
+			"label": "Test project",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"test"
+			]
+		}
+	]
+}

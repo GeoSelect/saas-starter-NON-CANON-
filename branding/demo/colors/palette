@@ -1,0 +1,16 @@
+# Happy HOA Branding – Color Palette
+
+| Name            | HEX      | RGB              | Example         |
+|-----------------|----------|------------------|-----------------|
+| Primary Green   | #219653  | 33, 150, 83      | ![#219653](https://via.placeholder.com/16/219653/219653) |
+| Light Green     | #43b649  | 67, 182, 73      | ![#43b649](https://via.placeholder.com/16/43b649/43b649) |
+| Yellow/Gold     | #FFCC3D  | 255, 204, 61     | ![#FFCC3D](https://via.placeholder.com/16/FFCC3D/FFCC3D) |
+| Accent Teal     | #1baf8b  | 27, 175, 139     | ![#1baf8b](https://via.placeholder.com/16/1baf8b/1baf8b) |
+| Light Gray BG   | #ffffff  | 255, 255, 255    | ![#ffffff](https://via.placeholder.com/16/ffffff/ffffff) |
+| Deep Gray       | #222e32  | 34, 46, 50       | ![#222e32](https://via.placeholder.com/16/222e32/222e32) |
+
+## Usage
+- **Primary Green (#219653):** Buttons, highlights, logo main, icons
+- **Yellow/Gold (#FFCC3D):** Accents, callouts, logo elements
+- **Teal (#1baf8b):** Links, active elements, secondary call to action
+- **Light Gray BG (#fff):** backgrounds, surfaces
