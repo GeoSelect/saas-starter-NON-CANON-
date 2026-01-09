@@ -6,10 +6,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// GET /api/workspaces/[id] - Get a specific workspace
+// GET /api/workspaces/[workspace_id] - Get a specific workspace
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { workspace_id: string } }
 ) {
   try {
     const {
@@ -21,7 +21,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const workspaceId = params.id;
+    const workspaceId = params.workspace_id;
     const userId = session.user.id;
 
     // Check if user has access to this workspace
@@ -58,10 +58,10 @@ export async function GET(
   }
 }
 
-// PATCH /api/workspaces/[id] - Update a workspace
+// PATCH /api/workspaces/[workspace_id] - Update a workspace
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { workspace_id: string } }
 ) {
   try {
     const {
@@ -73,7 +73,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const workspaceId = params.id;
+    const workspaceId = params.workspace_id;
     const userId = session.user.id;
     const updates = await request.json();
 
@@ -118,10 +118,10 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/workspaces/[id] - Delete a workspace
+// DELETE /api/workspaces/[workspace_id] - Delete a workspace
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { workspace_id: string } }
 ) {
   try {
     const {
@@ -133,7 +133,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const workspaceId = params.id;
+    const workspaceId = params.workspace_id;
     const userId = session.user.id;
 
     // Check if user is owner
