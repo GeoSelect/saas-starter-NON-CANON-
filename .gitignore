@@ -27,6 +27,19 @@ yarn-error.log*
 
 # local env files
 .env
+.env.local
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# secret files
+*.secret
+*.secrets
+.secrets/
+secrets/
+.env.secret
+.env.secrets
 
 # vercel
 .vercel
@@ -34,8 +47,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-.vscode
 
 # Docker
 postgres_data/
-.env*.local
+
+# VS Code (workspace-specific settings should use .vscode/*.example pattern)
+.vscode/settings.json
+.vscode/launch.json

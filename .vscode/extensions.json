@@ -1,0 +1,32 @@
+{
+  "recommendations": [
+    // Environment file support
+    "mikestead.dotenv",
+    
+    // API testing with environment variables
+    "Postman.postman-for-vscode",
+    
+    // Essential Next.js/React development
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    
+    // TypeScript support
+    "pmneo.tsimporter",
+    
+    // Git integration
+    "eamodio.gitlens",
+    
+    // Docker support (if using Docker)
+    "ms-azuretools.vscode-docker",
+    
+    // Database tools
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg",
+    
+    // General productivity
+    "christian-kohler.path-intellisense",
+    "formulahendry.auto-rename-tag",
+    "streetsidesoftware.code-spell-checker"
+  ]
+}
