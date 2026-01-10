@@ -6,6 +6,7 @@ import type { Account } from '@/lib/contracts/account';
 import type { Workspace } from '@/lib/contracts/workspace';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { getActiveWorkspace } from '@/lib/workspace/active-workspace';
 
 /**
  * Fetch server-side session: account + current workspace.
@@ -64,16 +65,57 @@ async function getServerSession(): Promise<{
       },
     };
 
-    // TODO: Fetch default workspace for this user
-    // const { data: workspace } = await supabase
-    //   .from('workspaces')
-    //   .select('*')
-    //   .eq('owner_id', user.id)
-    //   .order('created_at')
-    //   .limit(1)
-    //   .single();
+    // Fetch active workspace for this user
+    let workspace: Workspace | null = null;
     
-    const workspace: Workspace | null = null;
+    try {
+      const activeWorkspaceResult = await getActiveWorkspace(user.id);
+      
+      if (activeWorkspaceResult.ok && activeWorkspaceResult.active) {
+        const workspaceId = activeWorkspaceResult.active.data.workspace_id;
+        
+        // Fetch workspace details and membership
+        const { data: workspaceData } = await supabase
+          .from('workspaces')
+          .select(`
+            id,
+            organization_name,
+            organization_type,
+            metadata
+          `)
+          .eq('id', workspaceId)
+          .eq('is_active', true)
+          .single();
+
+        if (workspaceData) {
+          // Fetch workspace members
+          const { data: members } = await supabase
+            .from('workspace_memberships')
+            .select('user_id, workspace_role, created_at')
+            .eq('workspace_id', workspaceId)
+            .eq('is_active', true);
+
+          workspace = {
+            id: workspaceData.id,
+            slug: workspaceData.metadata?.slug || workspaceData.id,
+            name: workspaceData.organization_name,
+            tier: 'free', // Default tier for now
+            members: (members || []).map((m: any) => ({
+              userId: m.user_id,
+              role: m.workspace_role,
+              joinedAt: m.created_at,
+            })),
+            metadata: {
+              createdAt: workspaceData.metadata?.created_at || new Date().toISOString(),
+              updatedAt: workspaceData.metadata?.updated_at || new Date().toISOString(),
+            },
+          };
+        }
+      }
+    } catch (workspaceError) {
+      console.error('[C001] AppShell: failed to fetch workspace', workspaceError);
+      // Continue without workspace - user can create one later
+    }
 
     return { account, workspace };
   } catch (err) {
